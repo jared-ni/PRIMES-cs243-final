@@ -240,7 +240,6 @@ class CustomStrategy2(Strategy):
             print(f"Client {count} Loss: {res}")
             
 
-
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
         if self.fit_metrics_aggregation_fn:
