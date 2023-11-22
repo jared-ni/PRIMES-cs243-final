@@ -1,0 +1,23 @@
+[2023-11-22 13:38:20,773][flwr][INFO] - Starting Flower simulation, config: ServerConfig(num_rounds=10, round_timeout=None)
+[2023-11-22 13:38:22,864][flwr][INFO] - Flower VCE: Ray initialized with resources: {'memory': 8176559719.0, 'object_store_memory': 2147483648.0, 'node:__internal_head__': 1.0, 'CPU': 8.0, 'node:127.0.0.1': 1.0}
+[2023-11-22 13:38:22,864][flwr][INFO] - Flower VCE: Resources for each Virtual Client: {'num_cpus': 4, 'num_gpus': 0.0}
+[2023-11-22 13:38:22,874][flwr][INFO] - Flower VCE: Creating VirtualClientEngineActorPool with 2 actors
+[2023-11-22 13:38:22,874][flwr][INFO] - Initializing global parameters
+[2023-11-22 13:38:22,874][flwr][INFO] - Requesting initial parameters from one random client
+[2023-11-22 13:38:23,856][flwr][INFO] - Received initial parameters from one random client
+[2023-11-22 13:38:23,856][flwr][INFO] - Evaluating initial parameters
+[2023-11-22 13:38:24,556][flwr][INFO] - initial parameters (loss, other metrics): 182.12762093544006, {'accuracy': 0.0932}
+[2023-11-22 13:38:24,556][flwr][INFO] - FL starting
+[2023-11-22 13:38:24,557][flwr][DEBUG] - fit_round 1: strategy sampled 10 clients (out of 100)
+[2023-11-22 13:38:32,060][flwr][DEBUG] - fit_round 1 received 10 results and 0 failures
+[2023-11-22 13:38:32,064][flwr][WARNING] - No fit_metrics_aggregation_fn provided
+[2023-11-22 13:38:32,712][flwr][INFO] - fit progress: (1, 180.26937198638916, {'accuracy': 0.1548}, 8.156309042)
+[2023-11-22 13:38:32,712][flwr][DEBUG] - evaluate_round 1: strategy sampled 25 clients (out of 100)
+[2023-11-22 13:38:48,064][flwr][DEBUG] - evaluate_round 1 received 25 results and 0 failures
+[2023-11-22 13:38:48,065][flwr][WARNING] - No evaluate_metrics_aggregation_fn provided
+[2023-11-22 13:38:48,065][flwr][ERROR] - too many values to unpack (expected 2)
+[2023-11-22 13:38:48,065][flwr][ERROR] - Your simulation crashed :(. This could be because of several reasons.The most common are: 
+	 > Your system couldn't fit a single VirtualClient: try lowering `client_resources`.
+	 > All the actors in your pool crashed. This could be because: 
+		 - You clients hit an out-of-memory (OOM) error and actors couldn't recover from it. Try launching your simulation with more generous `client_resources` setting (i.e. it seems {'num_cpus': 4, 'num_gpus': 0.0} is not enough for your workload). Use fewer concurrent actors. 
+		 - You were running a multi-node simulation and all worker nodes disconnected. The head node might still be alive but cannot accommodate any actor with resources: {'num_cpus': 4, 'num_gpus': 0.0}.

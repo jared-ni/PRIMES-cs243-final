@@ -1,0 +1,28 @@
+[2023-11-21 22:34:38,582][flwr][INFO] - Starting Flower simulation, config: ServerConfig(num_rounds=10, round_timeout=None)
+[2023-11-21 22:34:40,897][flwr][INFO] - Flower VCE: Ray initialized with resources: {'memory': 8527357543.0, 'node:__internal_head__': 1.0, 'CPU': 8.0, 'object_store_memory': 2147483648.0, 'node:127.0.0.1': 1.0}
+[2023-11-21 22:34:40,897][flwr][INFO] - Flower VCE: Resources for each Virtual Client: {'num_cpus': 2, 'num_gpus': 0.0}
+[2023-11-21 22:34:40,906][flwr][INFO] - Flower VCE: Creating VirtualClientEngineActorPool with 4 actors
+[2023-11-21 22:34:40,906][flwr][INFO] - Initializing global parameters
+[2023-11-21 22:34:40,906][flwr][INFO] - Requesting initial parameters from one random client
+[2023-11-21 22:34:41,979][flwr][INFO] - Received initial parameters from one random client
+[2023-11-21 22:34:41,979][flwr][INFO] - Evaluating initial parameters
+[2023-11-21 22:34:42,832][flwr][INFO] - initial parameters (loss, other metrics): 182.3604757785797, {'accuracy': 0.0987}
+[2023-11-21 22:34:42,832][flwr][INFO] - FL starting
+[2023-11-21 22:34:42,832][flwr][DEBUG] - fit_round 1: strategy sampled 10 clients (out of 100)
+[2023-11-21 22:34:57,504][flwr][DEBUG] - fit_round 1 received 10 results and 0 failures
+[2023-11-21 22:34:57,510][flwr][WARNING] - No fit_metrics_aggregation_fn provided
+[2023-11-21 22:34:58,393][flwr][INFO] - fit progress: (1, 174.5310938358307, {'accuracy': 0.4782}, 15.560815292)
+[2023-11-21 22:34:58,393][flwr][INFO] - evaluate_round 1: no clients selected, cancel
+[2023-11-21 22:34:58,393][flwr][DEBUG] - fit_round 2: strategy sampled 10 clients (out of 100)
+[2023-11-21 22:35:12,610][flwr][DEBUG] - fit_round 2 received 10 results and 0 failures
+[2023-11-21 22:35:13,470][flwr][INFO] - fit progress: (2, 102.74175602197647, {'accuracy': 0.6731}, 30.637530958)
+[2023-11-21 22:35:13,470][flwr][INFO] - evaluate_round 2: no clients selected, cancel
+[2023-11-21 22:35:13,470][flwr][DEBUG] - fit_round 3: strategy sampled 10 clients (out of 100)
+[2023-11-21 22:35:28,210][flwr][DEBUG] - fit_round 3 received 10 results and 0 failures
+[2023-11-21 22:35:29,066][flwr][INFO] - fit progress: (3, 56.007484436035156, {'accuracy': 0.7786}, 46.233720792)
+[2023-11-21 22:35:29,066][flwr][INFO] - evaluate_round 3: no clients selected, cancel
+[2023-11-21 22:35:29,066][flwr][DEBUG] - fit_round 4: strategy sampled 10 clients (out of 100)
+[2023-11-21 22:35:44,972][flwr][DEBUG] - fit_round 4 received 10 results and 0 failures
+[2023-11-21 22:35:45,857][flwr][INFO] - fit progress: (4, 41.77382069826126, {'accuracy': 0.842}, 63.024564208)
+[2023-11-21 22:35:45,857][flwr][INFO] - evaluate_round 4: no clients selected, cancel
+[2023-11-21 22:35:45,857][flwr][DEBUG] - fit_round 5: strategy sampled 10 clients (out of 100)

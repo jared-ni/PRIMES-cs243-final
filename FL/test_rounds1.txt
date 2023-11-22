@@ -1,0 +1,43 @@
+num_rounds: 10
+num_clients: 100
+batch_size: 20
+num_classes: 10
+num_clients_per_round_fit: 10
+num_clients_per_round_eval: 25
+config_fit:
+  lr: 0.01
+  momentum: 0.9
+  local_epochs: 1
+
+Using custom strategy
+[2023-11-22 13:41:13,059][flwr][INFO] - Starting Flower simulation, config: ServerConfig(num_rounds=10, round_timeout=None)
+[2023-11-22 13:41:15,169][flwr][INFO] - Flower VCE: Ray initialized with resources: {'object_store_memory': 2147483648.0, 'node:__internal_head__': 1.0, 'node:127.0.0.1': 1.0, 'CPU': 8.0, 'memory': 8382467277.0}
+[2023-11-22 13:41:15,170][flwr][INFO] - Flower VCE: Resources for each Virtual Client: {'num_cpus': 4, 'num_gpus': 0.0}
+[2023-11-22 13:41:15,178][flwr][INFO] - Flower VCE: Creating VirtualClientEngineActorPool with 2 actors
+[2023-11-22 13:41:15,179][flwr][INFO] - Initializing global parameters
+[2023-11-22 13:41:15,179][flwr][INFO] - Requesting initial parameters from one random client
+[2023-11-22 13:41:16,074][flwr][INFO] - Received initial parameters from one random client
+[2023-11-22 13:41:16,074][flwr][INFO] - Evaluating initial parameters
+[2023-11-22 13:41:16,776][flwr][INFO] - initial parameters (loss, other metrics): 182.36568784713745, {'accuracy': 0.093}
+[2023-11-22 13:41:16,776][flwr][INFO] - FL starting
+[2023-11-22 13:41:16,776][flwr][DEBUG] - fit_round 1: strategy sampled 10 clients (out of 100)
+[2023-11-22 13:41:24,149][flwr][DEBUG] - fit_round 1 received 10 results and 0 failures
+aggregate fit
+[2023-11-22 13:41:24,153][flwr][WARNING] - No fit_metrics_aggregation_fn provided
+[2023-11-22 13:41:24,811][flwr][INFO] - fit progress: (1, 181.13343477249146, {'accuracy': 0.1675}, 8.035245292)
+[2023-11-22 13:41:24,811][flwr][DEBUG] - evaluate_round 1: strategy sampled 25 clients (out of 100)
+[36m(DefaultActor pid=60264)[0m Client Loss: 6.88662576675415, Accuracy: 0.16666666666666666
+[36m(DefaultActor pid=60265)[0m Client Loss: 6.890439033508301, Accuracy: 0.15[32m [repeated 10x across cluster][0m
+[36m(DefaultActor pid=60264)[0m Client Loss: 6.863168001174927, Accuracy: 0.23333333333333334[32m [repeated 10x across cluster][0m
+[2023-11-22 13:41:40,227][flwr][DEBUG] - evaluate_round 1 received 25 results and 0 failures
+[2023-11-22 13:41:40,228][flwr][WARNING] - No evaluate_metrics_aggregation_fn provided
+[2023-11-22 13:41:40,228][flwr][ERROR] - too many values to unpack (expected 2)
+[2023-11-22 13:41:40,228][flwr][ERROR] - Your simulation crashed :(. This could be because of several reasons.The most common are: 
+	 > Your system couldn't fit a single VirtualClient: try lowering `client_resources`.
+	 > All the actors in your pool crashed. This could be because: 
+		 - You clients hit an out-of-memory (OOM) error and actors couldn't recover from it. Try launching your simulation with more generous `client_resources` setting (i.e. it seems {'num_cpus': 4, 'num_gpus': 0.0} is not enough for your workload). Use fewer concurrent actors. 
+		 - You were running a multi-node simulation and all worker nodes disconnected. The head node might still be alive but cannot accommodate any actor with resources: {'num_cpus': 4, 'num_gpus': 0.0}.
+strategy results: 
+history: 
+
+[36m(DefaultActor pid=60264)[0m Client Loss: 6.871879577636719, Accuracy: 0.15[32m [repeated 4x across cluster][0m

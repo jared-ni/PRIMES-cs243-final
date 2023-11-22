@@ -1,0 +1,4 @@
+[2023-11-22 13:32:23,075][flwr][INFO] - Starting Flower simulation, config: ServerConfig(num_rounds=10, round_timeout=None)
+[2023-11-22 13:32:25,303][flwr][INFO] - Flower VCE: Ray initialized with resources: {'memory': 7704730010.0, 'node:__internal_head__': 1.0, 'object_store_memory': 2147483648.0, 'node:127.0.0.1': 1.0, 'CPU': 8.0}
+[2023-11-22 13:32:25,303][flwr][INFO] - Flower VCE: Resources for each Virtual Client: {'num_cpus': 20, 'num_gpus': 0.0}
+[2023-11-22 13:32:25,303][flwr][WARNING] - The ActorPool is empty. The system (CPUs=8.0, GPUs=0) does not meet the criteria to host at least one client with resources: {'num_cpus': 20, 'num_gpus': 0.0}. Lowering the `client_resources` could help.
