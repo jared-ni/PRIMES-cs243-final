@@ -12,14 +12,19 @@ import warnings
 from dataset import prepare_dataset
 import server_helper
 
+import sys 
+sys.path.append('../')
+
+from CustomStrategy2 import CustomStrategy2
+
 warnings.filterwarnings("ignore")
 
 NUM_ROUNDS = 10 # number of rounds of federated learning
 NUM_CLIENTS = 100 # number of total clients available (this is also the number of partitions we need to create)
 BATCH_SIZE = 20 # batch size to use by clients during training
 NUM_CLASSES = 10 # number of classes in our dataset (we use MNIST) -- this tells the model how to setup its output fully-connected layer
-NUM_CLIENTS_PER_ROUND_FIT = 10 # number of clients to involve in each fit round (fit  round = clients receive the model from the server and do local training)
-NUM_CLIENTS_PER_ROUND_EVAL = 25 # number of clients to involve in each evaluate round (evaluate round = client only evaluate the model sent by the server on their local dataset without training it)
+NUM_CLIENTS_PER_ROUND_FIT = 2 # number of clients to involve in each fit round (fit  round = clients receive the model from the server and do local training)
+NUM_CLIENTS_PER_ROUND_EVAL = 2 # number of clients to involve in each evaluate round (evaluate round = client only evaluate the model sent by the server on their local dataset without training it)
 
 
 def fit_config(server_round: int):
@@ -108,23 +113,31 @@ def main():
     # model_parameters = [val.cpu().numpy() for _, val in model.state_dict().items()]
 
     # Create strategy
-    strategy = fl.server.strategy.FedAvg(
-        fraction_fit=0.2,
-        fraction_evaluate=0.2,
-        min_fit_clients=NUM_CLIENTS_PER_ROUND_FIT,
-        min_evaluate_clients=NUM_CLIENTS_PER_ROUND_EVAL,
-        min_available_clients=2, # min_available_clients has to >= min running clients
-        evaluate_fn=server_helper.get_evaluate_fn(NUM_CLASSES, testloader),
-        on_fit_config_fn=fit_config,
-        on_evaluate_config_fn=evaluate_config,
-    )
+    # strategy = fl.server.strategy.FedAvg(
+    #     fraction_fit=0.2,
+    #     fraction_evaluate=0.2,
+    #     min_fit_clients=NUM_CLIENTS_PER_ROUND_FIT,
+    #     min_evaluate_clients=NUM_CLIENTS_PER_ROUND_EVAL,
+    #     min_available_clients=2, # min_available_clients has to >= min running clients
+    #     evaluate_fn=server_helper.get_evaluate_fn(NUM_CLASSES, testloader),
+    #     on_fit_config_fn=fit_config,
+    #     on_evaluate_config_fn=evaluate_config,
+    # )
     # strategy = fl.server.strategy.FedAvg()
-
+    strategy = CustomStrategy2(
+        fraction_fit=0.0,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+        min_fit_clients=NUM_CLIENTS_PER_ROUND_FIT,  # number of clients to sample for fit()
+        fraction_evaluate=0.0,  # similar to fraction_fit, we don't need to use this argument.
+        min_evaluate_clients=NUM_CLIENTS_PER_ROUND_EVAL,  # number of clients to sample for evaluate()
+        min_available_clients=2,  # total clients in the simulation
+        on_fit_config_fn=fit_config,
+        evaluate_fn=server_helper.get_evaluate_fn(NUM_CLASSES, testloader),
+    )  
 
     # Start Flower server for four rounds of federated learning
     fl.server.start_server(
         server_address="127.0.0.1:8080",
-        config=fl.server.ServerConfig(num_rounds=4),
+        config=fl.server.ServerConfig(num_rounds=10),
         strategy=strategy,
     )
 
