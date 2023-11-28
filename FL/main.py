@@ -11,6 +11,10 @@ from dataset import prepare_dataset
 from client import generate_client_fn
 from server import get_on_fit_config, get_evaluate_fn
 from CustomStrategy import FedCustom
+
+import sys 
+sys.path.append('../')
+
 from CustomStrategy2 import CustomStrategy2
 
 
@@ -69,17 +73,17 @@ def main(cfg: DictConfig):
     #         num_clients = int(num_available_clients * self.fraction_fit)
     #         clients_to_do_fit = max(num_clients, self.min_fit_clients)
     # ```
-    strategy = fl.server.strategy.FedAvg(
-        fraction_fit=0.0,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
-        min_fit_clients=cfg.num_clients_per_round_fit,  # number of clients to sample for fit()
-        fraction_evaluate=0.0,  # similar to fraction_fit, we don't need to use this argument.
-        min_evaluate_clients=cfg.num_clients_per_round_eval,  # number of clients to sample for evaluate()
-        min_available_clients=cfg.num_clients,  # total clients in the simulation
-        on_fit_config_fn=get_on_fit_config(
-            cfg.config_fit
-        ),  # a function to execute to obtain the configuration to send to the clients during fit()
-        evaluate_fn=get_evaluate_fn(cfg.num_classes, testloader),
-    )  # a function to run on the server side to evaluate the global model.
+    # strategy = fl.server.strategy.FedAvg(
+    #     fraction_fit=0.0,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+    #     min_fit_clients=cfg.num_clients_per_round_fit,  # number of clients to sample for fit()
+    #     fraction_evaluate=0.0,  # similar to fraction_fit, we don't need to use this argument.
+    #     min_evaluate_clients=cfg.num_clients_per_round_eval,  # number of clients to sample for evaluate()
+    #     min_available_clients=cfg.num_clients,  # total clients in the simulation
+    #     on_fit_config_fn=get_on_fit_config(
+    #         cfg.config_fit
+    #     ),  # a function to execute to obtain the configuration to send to the clients during fit()
+    #     evaluate_fn=get_evaluate_fn(cfg.num_classes, testloader),
+    # )  # a function to run on the server side to evaluate the global model.
 
     print("Using custom strategy")
     # strategy=FedCustom(

@@ -7,6 +7,28 @@ import flwr as fl
 
 from model import Net, train, test
 
+import utils
+from torch.utils.data import DataLoader
+import torchvision.datasets
+import torch
+import flwr as fl
+import argparse
+from collections import OrderedDict
+import warnings
+import dataset
+import random
+
+NUM_ROUNDS = 10 # number of rounds of federated learning
+NUM_CLIENTS = 100 # number of total clients available (this is also the number of partitions we need to create)
+BATCH_SIZE = 20 # batch size to use by clients during training
+NUM_CLASSES = 10 # number of classes in our dataset (we use MNIST) -- this tells the model how to setup its output fully-connected layer
+NUM_CLIENTS_PER_ROUND_FIT = 10 # number of clients to involve in each fit round (fit  round = clients receive the model from the server and do local training)
+NUM_CLIENTS_PER_ROUND_EVAL = 25 # number of clients to involve in each evaluate round (evaluate round = client only evaluate the model sent by the server on their local dataset without training it)
+CONFIG = {
+    "lr": 0.1,
+    "momentum": 0.9,
+    "local_epochs": 1,
+}
 
 class FlowerClient(fl.client.NumPyClient):
     """Define a Flower Client."""
@@ -23,6 +45,7 @@ class FlowerClient(fl.client.NumPyClient):
 
         # figure out if this client has access to GPU support or not
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
     def set_parameters(self, parameters: NDArrays):
         """Receive parameters and apply them to the local model."""
@@ -61,9 +84,9 @@ class FlowerClient(fl.client.NumPyClient):
         # or you want clients to do more local epochs at later stages in the simulation
         # you can control these by customising what you pass to `on_fit_config_fn` when
         # defining your strategy.
-        lr = config["lr"]
-        momentum = config["momentum"]
-        epochs = config["local_epochs"]
+        lr = CONFIG["lr"]
+        momentum = CONFIG["momentum"]
+        epochs = CONFIG["local_epochs"]
 
         # a very standard looking optimiser
         optim = torch.optim.SGD(self.model.parameters(), lr=lr, momentum=momentum)
@@ -100,24 +123,33 @@ class FlowerClient(fl.client.NumPyClient):
         return float(loss), len(self.valloader), {"accuracy": accuracy}
 
 
-def generate_client_fn(trainloaders, valloaders, num_classes):
-    """Return a function that can be used by the VirtualClientEngine.
+def main() -> None:
+    # Parse command line argument `partition`
+    # parser = argparse.ArgumentParser(description="Flower")
+    # if args.dry:
+    #     client_dry_run(device)
+    # else:
+    #     # Load a subset of CIFAR-10 to simulate the local data partition
+    #     trainset, testset = utils.load_partition(args.partition)
 
-    to spawn a FlowerClient with client id `cid`.
-    """
+    #     if args.toy:
+    #         trainset = torch.utils.data.Subset(trainset, range(10))
+    #         testset = torch.utils.data.Subset(testset, range(10))
 
-    def client_fn(cid: str):
-        # This function will be called internally by the VirtualClientEngine
-        # Each time the cid-th client is told to participate in the FL
-        # simulation (whether it is for doing fit() or evaluate())
+    # Start Flower client (need client local data)
+    
+    trainloaders, validationloaders, testloader = dataset.prepare_dataset(
+        NUM_CLIENTS, BATCH_SIZE
+    )
 
-        # Returns a normal FLowerClient that will use the cid-th train/val
-        # dataloaders as it's local data.
-        return FlowerClient(
-            trainloader=trainloaders[int(cid)],
-            vallodaer=valloaders[int(cid)],
-            num_classes=num_classes,
-        )
+    # client_train, client_val = dataset.get_client_data(NUM_CLIENTS, BATCH_SIZE)
+    cid = random.randint(0, NUM_CLIENTS - 1)
+    client = FlowerClient(trainloader=trainloaders[cid], vallodaer=validationloaders[cid], num_classes=NUM_CLASSES)
 
-    # return the function to spawn client
-    return client_fn
+    # client = FlowerClient(trainloader=client_train, vallodaer=client_val, num_classes=NUM_CLASSES)
+
+    fl.client.start_numpy_client(server_address="127.0.0.1:8080", client=client)
+
+
+if __name__ == "__main__":
+    main()
