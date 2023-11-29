@@ -25,11 +25,11 @@ trainloaders, validationloaders, testloader = prepare_dataset(
 # strategy = fl.server.strategy.FedAvg(evaluate_metrics_aggregation_fn=weighted_average)
 # strategy = CustomStrategy2(evaluate_metrics_aggregation_fn=weighted_average)
 strategy = CustomStrategy2(
-    fraction_fit=1.0,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+    fraction_fit=0.2,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
     min_fit_clients=2,  # number of clients to sample for fit()
-    fraction_evaluate=1.0,  # similar to fraction_fit, we don't need to use this argument.
-    min_evaluate_clients=2,  # number of clients to sample for evaluate()
-    min_available_clients=2,  # total clients in the simulation
+    fraction_evaluate=0.2,  # similar to fraction_fit, we don't need to use this argument.
+    min_evaluate_clients=5,  # number of clients to sample for evaluate()
+    min_available_clients=15,  # total clients in the simulation
     evaluate_metrics_aggregation_fn=weighted_average,
     # on_fit_config_fn=get_on_fit_config(
     #     0.1, 0.9, 1

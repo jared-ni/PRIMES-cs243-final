@@ -7,7 +7,7 @@ from model import Net, train, test
 import dataset
 import warnings
 from collections import OrderedDict
-
+import random
 import flwr as fl
 import torch
 import torch.nn as nn
@@ -16,7 +16,6 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import Compose, Normalize, ToTensor
 from tqdm import tqdm
-
 import torch
 from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import ToTensor, Normalize, Compose
@@ -70,13 +69,14 @@ def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
             DataLoader(for_val, batch_size=batch_size, shuffle=False)
         )
     # testloader = DataLoader(testset, batch_size=128)
-    return trainloaders[0], valloaders[0]
+    cid = random.randint(0, num_partitions - 1)
+    return trainloaders[cid], valloaders[cid]
 
 
 # Load model and data (simple CNN, CIFAR-10)
 net = Net().to(DEVICE)
 # trainloader, testloader = load_data()
-trainloader, testloader = prepare_data(3, 32)
+trainloader, testloader = prepare_data(15, 32)
 # trainloaders, testloaders, _ = dataset.prepare_dataset(100, 20)
 # trainloader, testloader = trainloaders[0], testloaders[0]
 print(trainloader)
