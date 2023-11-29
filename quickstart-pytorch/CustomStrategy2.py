@@ -232,6 +232,13 @@ class CustomStrategy2(Strategy):
             for _, fit_res in results
         ]
         parameters_aggregated = ndarrays_to_parameters(aggregate(weights_results))
+        
+        count = 0
+        for client_parameter, _ in weights_results:
+            count += 1
+            res = self.evaluate_fn(server_round, client_parameter, {})
+            # print(client_parameter)
+            print(f"Client {count} Loss: {res}")
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
