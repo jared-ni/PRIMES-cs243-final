@@ -3,7 +3,7 @@ from typing import List, Tuple
 import flwr as fl
 from flwr.common import Metrics
 from CustomStrategy2 import CustomStrategy2
-# from server_helper import get_on_fit_config, get_evaluate_fn
+from server_helper import get_on_fit_config, get_evaluate_fn
 from dataset import prepare_dataset
 
 # Define metric aggregation function
@@ -20,8 +20,9 @@ trainloaders, validationloaders, testloader = prepare_dataset(
     2, 20
 )
 
+
 # Define strategy
-strategy = fl.server.strategy.FedAvg(evaluate_metrics_aggregation_fn=weighted_average)
+# strategy = fl.server.strategy.FedAvg(evaluate_metrics_aggregation_fn=weighted_average)
 # strategy = CustomStrategy2(evaluate_metrics_aggregation_fn=weighted_average)
 strategy = CustomStrategy2(
     fraction_fit=1.0,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
@@ -29,7 +30,7 @@ strategy = CustomStrategy2(
     fraction_evaluate=1.0,  # similar to fraction_fit, we don't need to use this argument.
     min_evaluate_clients=2,  # number of clients to sample for evaluate()
     min_available_clients=2,  # total clients in the simulation
-    evaluate_metrics_aggregation_fn=weighted_average
+    evaluate_metrics_aggregation_fn=weighted_average,
     # on_fit_config_fn=get_on_fit_config(
     #     0.1, 0.9, 1
     # ),  # a function to execute to obtain the configuration to send to the clients during fit()

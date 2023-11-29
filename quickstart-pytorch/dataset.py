@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import ToTensor, Normalize, Compose
 from torchvision.datasets import MNIST
-import random
 
 def get_mnist(data_path: str = "./data"):
     """Download MNIST and apply minimal transformation."""
