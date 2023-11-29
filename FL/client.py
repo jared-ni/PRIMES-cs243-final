@@ -4,6 +4,7 @@ from flwr.common import NDArrays, Scalar
 
 import torch
 import flwr as fl
+import random, math
 
 from model import Net, train, test
 
@@ -23,6 +24,14 @@ class FlowerClient(fl.client.NumPyClient):
 
         # figure out if this client has access to GPU support or not
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        # cost and payment stuff
+        self.budget = random.randint(50,100) 
+
+        
+    def cost(self, accuracy):
+        # can change to have different coefficients for diff agents later
+        return 0.5 * self.budget - math.log(self.budget / accuracy - 1)
 
     def set_parameters(self, parameters: NDArrays):
         """Receive parameters and apply them to the local model."""
