@@ -8,7 +8,7 @@ import torch
 from model import Net, test
 
 
-def get_on_fit_config(config: DictConfig):
+def get_on_fit_config(lr, momentum, local_epochs):
     """Return function that prepares config to send to clients."""
 
     def fit_config_fn(server_round: int):
@@ -22,9 +22,9 @@ def get_on_fit_config(config: DictConfig):
         # stages in the FL process (e.g. smaller lr after N rounds)
 
         return {
-            "lr": config.lr,
-            "momentum": config.momentum,
-            "local_epochs": config.local_epochs,
+            "lr": lr,
+            "momentum": momentum,
+            "local_epochs": local_epochs,
         }
 
     return fit_config_fn

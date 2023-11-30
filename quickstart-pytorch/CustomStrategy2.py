@@ -1,23 +1,3 @@
-# Copyright 2020 Adap GmbH. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Federated Averaging (FedAvg) [McMahan et al., 2016] strategy.
-
-Paper: arxiv.org/abs/1602.05629
-"""
-
-
 from logging import WARNING
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -39,6 +19,12 @@ from flwr.server.client_proxy import ClientProxy
 
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.server.strategy import Strategy
+
+import grpc
+import sys
+sys.path.append("..")
+import primes_pb2_grpc as rpc
+import primes_pb2 as primes
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -128,6 +114,22 @@ class CustomStrategy2(Strategy):
         self.initial_parameters = initial_parameters
         self.fit_metrics_aggregation_fn = fit_metrics_aggregation_fn
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
+
+        # connection to PRIMES server
+        self.address = "127.0.0.1"
+        self.port = 12345
+        addr = str(self.address) + ":" + str(self.port)
+        channel = grpc.insecure_channel(addr)
+        self.conn = rpc.PrimesStub(channel)
+
+
+    def send_loss(self, cids, losses, accuracies):
+        # send loss to PRIMES server
+        response = self.conn.getServerClientLoss(
+            primes.lossAndAccuracyRequest(cids=cids, losses=losses, accuracies=accuracies))
+        print("Send Loss: result: ")
+        print(response)
+
 
     def __repr__(self) -> str:
         """Compute a string representation of the strategy."""
@@ -233,12 +235,26 @@ class CustomStrategy2(Strategy):
         ]
         parameters_aggregated = ndarrays_to_parameters(aggregate(weights_results))
         
+        clients_results = [ client.cid for client, _ in results ]
+        losses = []
+        accuracies = []
+
         count = 0
         for client_parameter, _ in weights_results:
-            count += 1
-            res = self.evaluate_fn(server_round, client_parameter, {})
+            loss, acc = self.evaluate_fn(server_round, client_parameter, {})
+            if "accuracy" in acc:
+                acc = acc["accuracy"]
+
+            losses.append(loss)
+            accuracies.append(acc)
+
             # print(client_parameter)
-            print(f"Client {count} Loss: {res}")
+            print(f"Client {count} Loss: {loss}, Accuracy: {acc}, cid: {clients_results[count]}")
+            count += 1
+            
+        print("send loss: ")
+        self.send_loss(clients_results, losses, accuracies)
+
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
