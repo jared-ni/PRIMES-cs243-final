@@ -36,7 +36,10 @@ class PrimesServicer(rpc.PrimesServicer):
         print("getServerClientLoss")
         step_data = zip(request.cids, request.losses, request.accuracies)
         for cid, loss, accuracy in step_data:
-            self.server_clients[cid] = (loss, accuracy)
+            if cid in self.server_clients:
+                self.server_clients[cid].append((loss, accuracy))
+            else:
+                self.server_clients[cid] = [(loss, accuracy)]
         
         print(self.server_clients)
 
