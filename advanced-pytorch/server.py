@@ -15,7 +15,7 @@ import server_helper
 import sys 
 sys.path.append('../')
 
-from CustomStrategy2 import CustomStrategy2
+from CustomStrategy2_nan import CustomStrategy2
 
 warnings.filterwarnings("ignore")
 

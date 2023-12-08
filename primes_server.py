@@ -11,6 +11,9 @@ import threading
 
 from FL.model import Net, train, test
 
+WEIGHTS = {"NEXT_STEP":0.8,
+           "SERVER_LOSS": 0.2}
+K = 10
 
 class PrimesServicer(rpc.PrimesServicer):
     def __init__(self):
@@ -44,6 +47,15 @@ class PrimesServicer(rpc.PrimesServicer):
         
         print(self.server_clients)
         return primes.ServerReply(status="OK")
+    
+    def getNextClients(self, request: primes.nextClientsRequest, context):
+        ranked_clients = []
+        for cid in self.server_clients:
+            ranked_clients.append((cid,WEIGHTS["NEXT_STEP"]*self.next_step_clients[cid] + WEIGHTS["SERVER_LOSS"]*self.server_clients[cid]))
+        ranked_client_tuples = sorted(ranked_clients, key=lambda client: client[1])
+        ranked_clients = [cid for (cid, weight) in ranked_client_tuples]
+        return primes.nextClientsReply(cids=ranked_clients)
+
 
 
 if __name__ == '__main__':

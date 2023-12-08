@@ -24,6 +24,12 @@ message lossAndAccuracyRequest {
     repeated float accuracies = 3;
 }
 
+message nextClientRequest {}
+
+message nextClientReply {
+    repeated string cids = 1;
+}
+
 message ServerReply {
     string status = 1;
 }

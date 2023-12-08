@@ -15,7 +15,7 @@ from CustomStrategy import FedCustom
 import sys 
 sys.path.append('../')
 
-from CustomStrategy2 import CustomStrategy2
+from CustomStrategy2_nan import CustomStrategy2
 
 
 # A decorator for Hydra. This tells hydra to by default load the config in conf/base.yaml
