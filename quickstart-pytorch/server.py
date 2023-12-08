@@ -18,7 +18,7 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     return {"accuracy": sum(accuracies) / sum(examples)}
 
 
-trainloaders, validationloaders, testloader = prepare_dataset(
+_trainloaders, _validationloaders, testloader = prepare_dataset(
     2, 20
 )
 
