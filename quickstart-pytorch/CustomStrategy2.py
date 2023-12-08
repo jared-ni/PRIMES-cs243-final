@@ -229,12 +229,13 @@ class CustomStrategy2(Strategy):
         # Sample clients
         # choose all from recommended cids, choose remaining from client pool
 
-        sample_size, min_num_clients = self.num_evaluation_clients(
-            client_manager.num_available()
-        )
+        # sample_size, min_num_clients = self.num_evaluation_clients(
+        #     client_manager.num_available()
+        # )
         clients = client_manager.sample(
-            num_clients=sample_size, min_num_clients=min_num_clients
+            num_clients=client_manager.num_available()
         )
+        # client_manager.all()
 
         # Return client/config pairs
         return [(client, evaluate_ins) for client in clients]

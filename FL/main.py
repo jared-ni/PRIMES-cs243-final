@@ -110,7 +110,7 @@ def main(cfg: DictConfig):
             cfg.config_fit
         ),  # a function to execute to obtain the configuration to send to the clients during fit()
         evaluate_fn=get_evaluate_fn(cfg.num_classes, testloader),
-    )  # a f
+    )
 
     ## 5. Start Simulation
     # With the dataset partitioned, the client function and the strategy ready, we can now launch the simulation!

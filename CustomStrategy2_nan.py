@@ -237,6 +237,7 @@ class CustomStrategy2(Strategy):
         for client_parameter, _ in weights_results:
             count += 1
             res = self.evaluate_fn(server_round, client_parameter, {})
+            # print(client_parameter)
             print(f"Client {count} Loss: {res}")
             
 
