@@ -11,6 +11,7 @@ import threading
 
 from FL.model import Net, train, test
 
+
 class PrimesServicer(rpc.PrimesServicer):
     def __init__(self):
         self.server_clients = {}
@@ -42,7 +43,6 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.server_clients[cid] = [(loss, accuracy)]
         
         print(self.server_clients)
-
         return primes.ServerReply(status="OK")
 
 

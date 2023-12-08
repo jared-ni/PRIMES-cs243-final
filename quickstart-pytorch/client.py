@@ -44,6 +44,7 @@ def get_mnist(data_path: str = "./data"):
     testset = MNIST(data_path, train=False, download=True, transform=tr)
     return trainset, testset
 
+
 def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
     trainset, testset = get_mnist()
     # return DataLoader(trainset, batch_size=32, shuffle=True), DataLoader(testset)
@@ -106,7 +107,17 @@ class FlowerClient(fl.client.NumPyClient):
     def evaluate(self, parameters: NDArrays, config):
         self.set_parameters(parameters)
         loss, accuracy = test(net, testloader)
-        return loss, len(testloader.dataset), {"accuracy": accuracy}
+        nextStepLoss, _, _ = self.nextStepEvaluate(parameters, {})
+        return loss, len(testloader.dataset), {"accuracy": accuracy, "nextStepLoss": nextStepLoss}
+    
+
+    def nextStepEvaluate(self, parameters: NDArrays, config):
+        self.set_parameters(parameters)
+        nextStepLoss, accuracy = test(net, trainloader)
+        return nextStepLoss, len(trainloader.dataset), {"accuracy": accuracy}
+    
+
+
 
 
 # Start Flower client

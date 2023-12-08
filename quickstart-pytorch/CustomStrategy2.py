@@ -168,14 +168,19 @@ class CustomStrategy2(Strategy):
         loss, metrics = eval_res
         return loss, metrics
 
+
+    # Configure next round of training, choose clients
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
+        
         """Configure the next round of training."""
         config = {}
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
             config = self.on_fit_config_fn(server_round)
+
+        # TODO: CONFIGURE FIT INSTRUCTIONS FOR CLIENT
         fit_ins = FitIns(parameters, config)
 
         # Sample clients
@@ -185,6 +190,21 @@ class CustomStrategy2(Strategy):
         clients = client_manager.sample(
             num_clients=sample_size, min_num_clients=min_num_clients
         )
+
+        # # get clients either from PRIMES or from client_manager
+        # if server_round == 1:
+        #     # get clients from client_manager
+        #     clients = client_manager.sample(
+        #         num_clients=sample_size, min_num_clients=min_num_clients
+        #     )
+        # else:
+        #    # get clients from PRIMES
+        #     clients_cids 
+        # for cid in clients_cids:
+        #     client_manager[cid]
+
+
+
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
@@ -202,9 +222,13 @@ class CustomStrategy2(Strategy):
         if self.on_evaluate_config_fn is not None:
             # Custom evaluation config function provided
             config = self.on_evaluate_config_fn(server_round)
+
+        # TODO: EVALUATE INSTRUCTIONS FOR CLIENT
         evaluate_ins = EvaluateIns(parameters, config)
 
         # Sample clients
+        # choose all from recommended cids, choose remaining from client pool
+
         sample_size, min_num_clients = self.num_evaluation_clients(
             client_manager.num_available()
         )
@@ -241,6 +265,7 @@ class CustomStrategy2(Strategy):
 
         count = 0
         for client_parameter, _ in weights_results:
+            # evaluate client's loss
             loss, acc = self.evaluate_fn(server_round, client_parameter, {})
             if "accuracy" in acc:
                 acc = acc["accuracy"]
@@ -253,7 +278,8 @@ class CustomStrategy2(Strategy):
             count += 1
             
         print("send loss: ")
-        self.send_loss(clients_results, losses, accuracies)
+        # recommended clients sent back to strategy
+        cids = self.send_loss(clients_results, losses, accuracies)
 
 
         # Aggregate custom metrics if aggregation fn was provided
@@ -280,6 +306,8 @@ class CustomStrategy2(Strategy):
             return None, {}
 
         # Aggregate loss
+        # NextStepLoss: get from client's evaluate config
+
 
         print("Aggregate Results Loss: ")
         print(results)
