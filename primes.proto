@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package helper;
+
+message Empty {}
+
+// client can request the price model server
+// for accuracy of the model
+message AccuracyRequest {
+    bytes ndarray_parameters = 1;
+}
+
+message AccuracyResponse {
+    float accuracy = 1;
+    float loss = 2;
+}
+
+message lossAndAccuracyRequest {
+    // array of cid: str
+    repeated string cids = 1;
+    // array of loss
+    repeated float losses = 2;
+    // array of accuracy
+    repeated float accuracies = 3;
+}
+
+message ServerReply {
+    string status = 1;
+}
+
+
+service Primes {
+    rpc getNextStepLoss(lossAndAccuracyRequest) returns (ServerReply);
+    rpc getServerClientLoss(lossAndAccuracyRequest) returns (ServerReply);
+}
