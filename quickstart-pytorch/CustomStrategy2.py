@@ -181,31 +181,30 @@ class CustomStrategy2(Strategy):
             # Custom fit config function provided
             config = self.on_fit_config_fn(server_round)
 
-        # TODO: CONFIGURE FIT INSTRUCTIONS FOR CLIENT
         fit_ins = FitIns(parameters, config)
 
         # Sample clients
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
-        clients = client_manager.sample(
-            num_clients=sample_size, min_num_clients=min_num_clients
-        )
 
-        # # get clients either from PRIMES or from client_manager
-        # if server_round == 1:
-        #     # get clients from client_manager
-        #     clients = client_manager.sample(
-        #         num_clients=sample_size, min_num_clients=min_num_clients
-        #     )
-        # else:
-        #    # get clients from PRIMES
-        #     clients_cids 
-        # for cid in clients_cids:
-        #     client_manager[cid]
+        # clients = client_manager.sample(
+        #     num_clients=sample_size, min_num_clients=min_num_clients
+        # )
 
-
-
+        # get clients either from PRIMES or from client_manager
+        if server_round == 1:
+            # get clients from client_manager
+            clients = client_manager.sample(
+                num_clients=sample_size, min_num_clients=min_num_clients
+            )
+        else:
+            # get clients from PRIMES
+            reply = self.conn.getNextClients(primes.nextClientsRequest(k=sample_size))
+            selected_cids = reply.cids
+            print("wowowowowoowow")
+            print(selected_cids)
+            clients = [client_manager[cid] for cid in selected_cids]
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
@@ -224,7 +223,6 @@ class CustomStrategy2(Strategy):
             # Custom evaluation config function provided
             config = self.on_evaluate_config_fn(server_round)
 
-        # TODO: EVALUATE INSTRUCTIONS FOR CLIENT
         evaluate_ins = EvaluateIns(parameters, config)
 
         # Sample clients
@@ -306,13 +304,29 @@ class CustomStrategy2(Strategy):
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
+        
+        print("Aggregate Results Loss: ")
+        print(results)
 
         # Aggregate loss
         # NextStepLoss: get from client's evaluate config
+        # EvaluateRes from metrics of client evaluate
 
-
-        print("Aggregate Results Loss: ")
-        print(results)
+        next_step_cids = []
+        next_step_losses = []
+        next_step_accuracies = []
+        for proxy, evaluateRes in results:
+            next_step_cids.append(proxy.cid)
+            next_step_losses.append(evaluateRes["next_step_loss"])
+            next_step_accuracies.append(evaluateRes["accuracy"])
+        
+        response = self.conn.getNextStepLoss(
+            primes.lossAndAccuracyRequest(cids=next_step_cids, 
+                                          losses=next_step_losses, 
+                                          accuracies=next_step_accuracies)
+        )
+        print(f"Next step loss: {response}")
+        
         loss_aggregated = weighted_loss_avg(
             [
                 (evaluate_res.num_examples, evaluate_res.loss)

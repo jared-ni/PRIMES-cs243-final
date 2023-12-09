@@ -106,7 +106,20 @@ class FlowerClient(fl.client.NumPyClient):
         loss, accuracy = test(self.model, self.valloader, self.device)
         print(f"Client Loss: {loss}, Accuracy: {accuracy}")
 
-        return float(loss), len(self.valloader), {"accuracy": accuracy}
+        nextStepEvaluateMetrics, _, _ = self.nextStepEvaluate(parameters, config)
+        next_step_loss = nextStepEvaluateMetrics["loss"]
+
+        return float(loss), len(self.valloader), {"accuracy": accuracy, "loss": loss, "next_step_loss": next_step_loss}
+    # last dicitonary: metrics: Dict[str, Scalar]
+    
+    # TODO trainloader
+    def nextStepEvaluate(self, parameters: NDArrays, config: Dict[str, Scalar]):
+        self.set_parameters(parameters)
+
+        loss, accuracy = test(self.model, self.valloader, self.device)
+        print(f"Client Loss: {loss}, Accuracy: {accuracy}")
+
+        return float(loss), len(self.trainloader), {"accuracy": accuracy, "loss": loss}
 
 
 def generate_client_fn(trainloaders, valloaders, num_classes):

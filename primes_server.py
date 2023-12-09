@@ -49,12 +49,15 @@ class PrimesServicer(rpc.PrimesServicer):
         return primes.ServerReply(status="OK")
     
     def getNextClients(self, request: primes.nextClientsRequest, context):
+        k = request.k
         ranked_clients = []
-        for cid in self.server_clients:
+        for client in self.server_clients:
+            cid = client.cid
             ranked_clients.append((cid,WEIGHTS["NEXT_STEP"]*self.next_step_clients[cid] + WEIGHTS["SERVER_LOSS"]*self.server_clients[cid]))
         ranked_client_tuples = sorted(ranked_clients, key=lambda client: client[1])
-        ranked_clients = [cid for (cid, weight) in ranked_client_tuples]
-        return primes.nextClientsReply(cids=ranked_clients)
+        ranked_cids = [cid for (cid, weight) in ranked_client_tuples]
+        selected_cids = ranked_cids[:k]
+        return primes.nextClientsReply(cids=selected_cids)
 
 
 
