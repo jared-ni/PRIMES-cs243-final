@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import flwr as fl
 from flwr.common import Metrics
-from CustomStrategy2_nan import CustomStrategy2
+from CustomStrategy2 import CustomStrategy2
 from server_helper import get_on_fit_config, get_evaluate_fn
 from dataset import prepare_dataset
 
@@ -39,7 +39,7 @@ strategy = CustomStrategy2(
 
 # Start Flower server
 fl.server.start_server(
-    server_address="0.0.0.0:8080",
+    server_address="18.191.130.182:8080",
     config=fl.server.ServerConfig(num_rounds=10),
     strategy=strategy,
     client_manager=CustomClientManager(),
