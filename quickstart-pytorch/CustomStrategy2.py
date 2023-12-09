@@ -116,7 +116,7 @@ class CustomStrategy2(Strategy):
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
 
         # connection to PRIMES server
-        self.address = "127.0.0.1"
+        self.address = "172.31.31.180"
         self.port = 12345
         addr = str(self.address) + ":" + str(self.port)
         channel = grpc.insecure_channel(addr)

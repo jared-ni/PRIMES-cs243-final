@@ -62,7 +62,7 @@ if __name__ == '__main__':
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     rpc.add_PrimesServicer_to_server(PrimesServicer(), server)
     print('Starting server. Listening on port 12345.')
-    server.add_insecure_port('127.0.0.1:12345')
+    server.add_insecure_port('172.31.31.180:12345')
     server.start()
 
     server.wait_for_termination()
