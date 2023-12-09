@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import flwr as fl
 from flwr.common import Metrics
-from CustomStrategy2_nan import CustomStrategy2
+from CustomStrategy2 import CustomStrategy2
 from server_helper import get_on_fit_config, get_evaluate_fn
 from dataset import prepare_dataset
 
