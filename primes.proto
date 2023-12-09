@@ -24,9 +24,9 @@ message lossAndAccuracyRequest {
     repeated float accuracies = 3;
 }
 
-message nextClientRequest {}
+message nextClientsRequest {}
 
-message nextClientReply {
+message nextClientsReply {
     repeated string cids = 1;
 }
 
