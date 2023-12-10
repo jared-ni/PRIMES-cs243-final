@@ -116,8 +116,8 @@ class CustomStrategy2(Strategy):
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
 
         # connection to PRIMES server
-        self.address = "172.31.31.180"
-        # self.address = "127.0.0.1"
+        # self.address = "172.31.31.180"
+        self.address = "127.0.0.1"
         self.port = 12345
         addr = str(self.address) + ":" + str(self.port)
         channel = grpc.insecure_channel(addr)
@@ -187,11 +187,7 @@ class CustomStrategy2(Strategy):
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
-
-        # clients = client_manager.sample(
-        #     num_clients=sample_size, min_num_clients=min_num_clients
-        # )
-
+        print("configure_fit")
         # get clients either from PRIMES or from client_manager
         if server_round == 1:
             # get clients from client_manager
@@ -200,11 +196,17 @@ class CustomStrategy2(Strategy):
             )
         else:
             # get clients from PRIMES
+            print("get clients from PRIMES")
+            print(primes.nextClientsRequest(k=sample_size))
             reply = self.conn.getNextClients(primes.nextClientsRequest(k=sample_size))
+            print("reply: ")
+            print(reply)
             selected_cids = reply.cids
             print("wowowowowoowow")
             print(selected_cids)
-            clients = [client_manager[cid] for cid in selected_cids]
+            clients = [client_manager.clients[cid] for cid in selected_cids]
+            print("clients")
+            print(clients)
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
@@ -315,10 +317,10 @@ class CustomStrategy2(Strategy):
         next_step_cids = []
         next_step_losses = []
         next_step_accuracies = []
-        for proxy, evaluateRes in results:
+        for proxy, evaluate_res in results:
             next_step_cids.append(proxy.cid)
-            next_step_losses.append(evaluateRes["next_step_loss"])
-            next_step_accuracies.append(evaluateRes["accuracy"])
+            next_step_losses.append(evaluate_res.metrics["next_step_loss"])
+            next_step_accuracies.append(evaluate_res.metrics["accuracy"])
         
         response = self.conn.getNextStepLoss(
             primes.lossAndAccuracyRequest(cids=next_step_cids, 

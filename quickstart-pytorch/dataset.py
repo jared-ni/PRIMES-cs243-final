@@ -3,6 +3,28 @@ from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import ToTensor, Normalize, Compose
 from torchvision.datasets import MNIST
 
+import bisect
+import warnings
+import math
+from typing import (
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union
+)
+
+from torch import default_generator, randperm
+from torch._utils import _accumulate
+
+from torch import Tensor, Generator
+
+
+
 def get_mnist(data_path: str = "./data"):
     """Download MNIST and apply minimal transformation."""
 
@@ -70,3 +92,165 @@ def prepare_dataset(num_partitions: int, batch_size: int, val_ratio: float = 0.1
     testloader = DataLoader(testset, batch_size=128)
 
     return trainloaders, valloaders, testloader
+
+
+# random_split implementation from PyTorch
+__all__ = [
+    "Dataset",
+    "IterableDataset",
+    "TensorDataset",
+    "ConcatDataset",
+    "ChainDataset",
+    "Subset",
+    "random_split",
+]
+
+T_co = TypeVar('T_co', covariant=True)
+T = TypeVar('T')
+
+
+class Dataset(Generic[T_co]):
+    def __getitem__(self, index) -> T_co:
+        raise NotImplementedError
+
+    def __add__(self, other: 'Dataset[T_co]') -> 'ConcatDataset[T_co]':
+        return ConcatDataset([self, other])
+
+
+class IterableDataset(Dataset[T_co]):
+    def __iter__(self) -> Iterator[T_co]:
+        raise NotImplementedError
+
+    def __add__(self, other: Dataset[T_co]):
+        return ChainDataset([self, other])
+
+
+class TensorDataset(Dataset[Tuple[Tensor, ...]]):
+    tensors: Tuple[Tensor, ...]
+
+    def __init__(self, *tensors: Tensor) -> None:
+        assert all(tensors[0].size(0) == tensor.size(0) for tensor in tensors), "Size mismatch between tensors"
+        self.tensors = tensors
+
+    def __getitem__(self, index):
+        return tuple(tensor[index] for tensor in self.tensors)
+
+    def __len__(self):
+        return self.tensors[0].size(0)
+
+
+class ConcatDataset(Dataset[T_co]):
+    r"""Dataset as a concatenation of multiple datasets.
+
+    This class is useful to assemble different existing datasets.
+
+    Args:
+        datasets (sequence): List of datasets to be concatenated
+    """
+    datasets: List[Dataset[T_co]]
+    cumulative_sizes: List[int]
+
+    @staticmethod
+    def cumsum(sequence):
+        r, s = [], 0
+        for e in sequence:
+            l = len(e)
+            r.append(l + s)
+            s += l
+        return r
+
+    def __init__(self, datasets: Iterable[Dataset]) -> None:
+        super(ConcatDataset, self).__init__()
+        self.datasets = list(datasets)
+        assert len(self.datasets) > 0, 'datasets should not be an empty iterable'  # type: ignore[arg-type]
+        for d in self.datasets:
+            assert not isinstance(d, IterableDataset), "ConcatDataset does not support IterableDataset"
+        self.cumulative_sizes = self.cumsum(self.datasets)
+
+    def __len__(self):
+        return self.cumulative_sizes[-1]
+
+    def __getitem__(self, idx):
+        if idx < 0:
+            if -idx > len(self):
+                raise ValueError("absolute value of index should not exceed dataset length")
+            idx = len(self) + idx
+        dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        if dataset_idx == 0:
+            sample_idx = idx
+        else:
+            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+        return self.datasets[dataset_idx][sample_idx]
+
+    @property
+    def cummulative_sizes(self):
+        warnings.warn("cummulative_sizes attribute is renamed to "
+                      "cumulative_sizes", DeprecationWarning, stacklevel=2)
+        return self.cumulative_sizes
+
+
+class ChainDataset(IterableDataset):
+    def __init__(self, datasets: Iterable[Dataset]) -> None:
+        super(ChainDataset, self).__init__()
+        self.datasets = datasets
+
+    def __iter__(self):
+        for d in self.datasets:
+            assert isinstance(d, IterableDataset), "ChainDataset only supports IterableDataset"
+            for x in d:
+                yield x
+
+    def __len__(self):
+        total = 0
+        for d in self.datasets:
+            assert isinstance(d, IterableDataset), "ChainDataset only supports IterableDataset"
+            total += len(d)  # type: ignore[arg-type]
+        return total
+
+
+class Subset(Dataset[T_co]):
+    dataset: Dataset[T_co]
+    indices: Sequence[int]
+
+    def __init__(self, dataset: Dataset[T_co], indices: Sequence[int]) -> None:
+        self.dataset = dataset
+        self.indices = indices
+
+    def __getitem__(self, idx):
+        if isinstance(idx, list):
+            return self.dataset[[self.indices[i] for i in idx]]
+        return self.dataset[self.indices[idx]]
+
+    def __len__(self):
+        return len(self.indices)
+
+
+def random_split(dataset: Dataset[T], lengths: Sequence[Union[int, float]],
+                 generator: Optional[Generator] = default_generator) -> List[Subset[T]]:
+
+    if math.isclose(sum(lengths), 1) and sum(lengths) <= 1:
+        subset_lengths: List[int] = []
+        for i, frac in enumerate(lengths):
+            if frac < 0 or frac > 1:
+                raise ValueError(f"Fraction at index {i} is not between 0 and 1")
+            n_items_in_split = int(
+                math.floor(len(dataset) * frac)  # type: ignore[arg-type]
+            )
+            subset_lengths.append(n_items_in_split)
+        remainder = len(dataset) - sum(subset_lengths)  # type: ignore[arg-type]
+        # add 1 to all the lengths in round-robin fashion until the remainder is 0
+        for i in range(remainder):
+            idx_to_add_at = i % len(subset_lengths)
+            subset_lengths[idx_to_add_at] += 1
+        lengths = subset_lengths
+        for i, length in enumerate(lengths):
+            if length == 0:
+                warnings.warn(f"Length of split at index {i} is 0. "
+                              f"This might result in an empty dataset.")
+
+    # Cannot verify that dataset is Sized
+    # if sum(lengths) != len(dataset):    # type: ignore[arg-type]
+    #     raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+
+    indices = randperm(sum(lengths), generator=generator).tolist()  # type: ignore[call-overload]
+    return [Subset(dataset, indices[offset - length : offset]) for offset, length in zip(_accumulate(lengths), lengths)]

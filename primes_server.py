@@ -28,9 +28,14 @@ class PrimesServicer(rpc.PrimesServicer):
     def getNextStepLoss(self, request: primes.lossAndAccuracyRequest, context):
         # get current round of loss
         step_data = zip(request.cids, request.losses, request.accuracies)
+        print("getNextStepLoss")
         for cid, loss, accuracy in step_data:
-            self.next_step_clients[cid] = (loss, accuracy)
-        
+            if cid in self.next_step_clients:
+                self.next_step_clients[cid].append((loss, accuracy))
+            else:
+                self.next_step_clients[cid] = [(loss, accuracy)]
+            print(cid, loss, accuracy, end=" ")
+            
         return primes.ServerReply(status="OK")
 
 
@@ -44,28 +49,65 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.server_clients[cid].append((loss, accuracy))
             else:
                 self.server_clients[cid] = [(loss, accuracy)]
+
+            # print without printing \n
+
+            print(cid, loss, accuracy, end=" ")
         
-        print(self.server_clients)
         return primes.ServerReply(status="OK")
     
     def getNextClients(self, request: primes.nextClientsRequest, context):
         k = request.k
         ranked_clients = []
-        for client in self.server_clients:
-            cid = client.cid
-            ranked_clients.append((cid,WEIGHTS["NEXT_STEP"]*self.next_step_clients[cid] + WEIGHTS["SERVER_LOSS"]*self.server_clients[cid]))
-        ranked_client_tuples = sorted(ranked_clients, key=lambda client: client[1])
-        ranked_cids = [cid for (cid, weight) in ranked_client_tuples]
-        selected_cids = ranked_cids[:k]
-        return primes.nextClientsReply(cids=selected_cids)
+        print("getNextClients")
+        print(self.next_step_clients)
+        print(":::")
+        print(self.server_clients)
+        print("______")
 
+        # average client server loss
+
+        avg_server_loss = sum([self.server_clients[cid][-1][0] for cid in self.server_clients]) / len(self.server_clients)
+
+        for cid in self.server_clients:
+            print("cid", cid)
+            print("self.next_step_clients[cid]", self.next_step_clients[cid])
+            print("self.server_clients[cid]", self.server_clients[cid])
+
+            print("1")
+
+            # what if client hasn't been selected yet? 
+            if cid in self.next_step_clients and cid in self.server_clients:
+                key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
+                       WEIGHTS["SERVER_LOSS"] *  self.server_clients[cid][-1][0])
+            elif cid in self.next_step_clients:
+                key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
+                       WEIGHTS["SERVER_LOSS"] *  avg_server_loss)
+            
+            print("2) key", key)
+
+            ranked_clients.append((cid, key))
+
+        print("3) ranked_clients", ranked_clients)
+        ranked_clients = sorted(ranked_clients, key=lambda client: client[1])
+        print("4) ranked_clients", ranked_clients)
+        ranked_cids = [cid for (cid, _weight) in ranked_clients]
+
+        selected_cids = ranked_cids[:k]
+
+        print("5) selected_cids", selected_cids)
+
+        print("getNextClients")
+        print(primes.nextClientsReply(cids=selected_cids))
+        return primes.nextClientsReply(cids=selected_cids)
 
 
 if __name__ == '__main__':
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     rpc.add_PrimesServicer_to_server(PrimesServicer(), server)
     print('Starting server. Listening on port 12345.')
-    server.add_insecure_port('172.31.31.180:12345')
+    # server.add_insecure_port('172.31.31.180:12345')
+    server.add_insecure_port('127.0.0.1:12345')
     server.start()
 
     server.wait_for_termination()
