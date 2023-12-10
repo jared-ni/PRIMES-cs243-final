@@ -20,6 +20,10 @@ class PrimesServicer(rpc.PrimesServicer):
         self.server_clients = {}
         self.next_step_clients = {}
 
+        # locks for server_clients and next_step_clients
+        self.server_clients_lock = threading.Lock()
+        self.next_step_clients_lock = threading.Lock()
+
         # TODO 
         self.payments = {}
 
@@ -35,13 +39,15 @@ class PrimesServicer(rpc.PrimesServicer):
             else:
                 self.next_step_clients[cid] = [(loss, accuracy)]
             
+            print(f"cid: {cid}, loss: {loss}, accuracy: {accuracy}")
+            
         return primes.ServerReply(status="OK")
 
 
     # function to gather server's version of client loss
     def getServerClientLoss(self, request: primes.lossAndAccuracyRequest, context):
         # get current round of loss
-        print("getServerClientLoss")
+        # print("getServerClientLoss")
         step_data = zip(request.cids, request.losses, request.accuracies)
         for cid, loss, accuracy in step_data:
             if cid in self.server_clients:
@@ -57,12 +63,10 @@ class PrimesServicer(rpc.PrimesServicer):
         k = request.k
         ranked_clients = []
 
-        # average client server loss
-        avg_server_loss = sum([self.server_clients[cid][-1][0] for cid in self.server_clients]) / len(self.server_clients)
-
-        for cid in self.server_clients:
+        for cid in self.next_step_clients:
             # selection is 100% based on next step loss
             key = self.next_step_clients[cid][-1][0]
+            ranked_clients.append((cid, key))
 
             """client payment function"""
             # # what if client hasn't been selected yet? 
@@ -73,9 +77,11 @@ class PrimesServicer(rpc.PrimesServicer):
             #     key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
             #            WEIGHTS["SERVER_LOSS"] *  avg_server_loss)
 
-            ranked_clients.append((cid, key))
-
         ranked_clients = sorted(ranked_clients, key=lambda client: client[1])
+        print(f"ranked_clients: {ranked_clients}")
+        print("_______________________")
+        print()
+        
         ranked_cids = [cid for (cid, _weight) in ranked_clients]
 
         selected_cids = ranked_cids[:k]

@@ -24,10 +24,8 @@ from torchvision.datasets import MNIST
 import argparse
 
 
-
 warnings.filterwarnings("ignore", category=UserWarning)
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 parser = argparse.ArgumentParser(description="Flower")
 parser.add_argument(
@@ -47,8 +45,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 print("corruption level: ", args.corruption)
-# client data quality
-# data_amount = random.randint(15, 1000)
 
 def test(net, testloader):
     """Validate the model on the test set."""
@@ -64,10 +60,6 @@ def test(net, testloader):
     return loss, accuracy
 
 
-# def crop_my_image(image: PIL.Image.Image) -> PIL.Image.Image:
-#     """Crop the images so only a specific region of interest is shown to my PyTorch model"""
-#     left, right, width, height = 20, 80, 40, 60
-#     return transforms.functional.crop(image, left=left, top=top, width=width, height=height)
 class RandomErasing:
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=0.0):
         self.probability = probability
@@ -83,14 +75,6 @@ class RandomErasing:
 
     def erase(self, img):
         c, h, w = img.size()
-        # print("self.probability", self.probability)
-        # print("c, h, w", c, h, w)
-        area = h * w
-
-        target_area = self.probability * area  # Erase 99% of the pixels
-
-        aspect_ratio = random.uniform(self.r1, 1.0)
-
         i = 0
         j = 0
         img[:, i:i + h, j:j + w] = self.mean
@@ -98,18 +82,9 @@ class RandomErasing:
     
 
 def get_mnist(data_path: str = "./data"):
-    # determines data quality
-    # erase_probability = random.uniform(0, 1)
-    erase_probability = 1
-    
-    # apply transformation to mess up this dataset by randomly pruning out some pixels
-    # use random erasing to prune 95% of the image
-
-
+    # apply transformation to corrupt the dataset by randomly pruning out some pixels
     tr = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))
-                #   ])
                 ,RandomErasing(probability=args.corruption)])
-                #   ,transforms.Lambda(crop_my_image)])
     
     # handwritten digits 0 - 9. 
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
@@ -146,9 +121,7 @@ def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
         valloaders.append(
             DataLoader(for_val, batch_size=batch_size, shuffle=False)
         )
-    # testloader = DataLoader(testset, batch_size=128)
-    # cid = random.randint(0, num_partitions - 1)
-    cid = 0
+
     cid = random.randint(0, num_partitions - 1)
     return trainloaders[cid], valloaders[cid]
 
@@ -188,7 +161,6 @@ class FlowerClient(fl.client.NumPyClient):
         nextStepLoss, accuracy = test(net, trainloader)
         return nextStepLoss, len(trainloader.dataset), {"accuracy": accuracy}
     
-
 
 # Start Flower client
 fl.client.start_numpy_client(

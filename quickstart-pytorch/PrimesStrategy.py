@@ -34,7 +34,7 @@ than or equal to the values of `min_fit_clients` and `min_evaluate_clients`.
 """
 
 
-class CustomStrategy2(Strategy):
+class PrimesStrategy(Strategy):
     """Configurable FedAvg strategy implementation."""
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
@@ -190,7 +190,7 @@ class CustomStrategy2(Strategy):
         )
         print("configure_fit")
         # 2 random rounds: get clients by sampling random
-        if server_round <= 2:
+        if server_round <= 3:
             clients = client_manager.sample(
                 num_clients=sample_size, min_num_clients=min_num_clients
             )
@@ -201,8 +201,8 @@ class CustomStrategy2(Strategy):
             clients = [client_manager.clients[cid] for cid in selected_cids]
 
         # Return client/config pairs
-        print("configure_fit selected clients: ")
-        print([client.cid + ", " for client in clients])
+        print(f"configure_fit {server_round}selected clients: ")
+        print([client.cid + " " for client in clients])
         return [(client, fit_ins) for client in clients]
 
 
