@@ -11,8 +11,11 @@ sleep 5  # Sleep for 3s to give the server enough time to start
 
 for i in `seq 0 3`; do
     echo "Starting client $i"
-    python client.py --fraction 1000 &
+    python client.py --fraction 15 --corruption 0.9 &
 done
+
+echo "Starting client 4"
+python client.py --fraction 15 --corruption 0.1 &
 
 # for i in `seq `; do
 #     echo "Starting client $i"

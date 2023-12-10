@@ -37,9 +37,16 @@ parser.add_argument(
     required=False,
     help="decides the fraction of data client has",
 )
+parser.add_argument(
+    "--corruption",
+    type=float,
+    default=False,
+    required=False,
+    help="decides the probability (0 to 1) of zeroing out images in the dataset",
+)
 args = parser.parse_args()
 
-
+print("corruption level: ", args.corruption)
 # client data quality
 # data_amount = random.randint(15, 1000)
 
@@ -62,7 +69,7 @@ def test(net, testloader):
 #     left, right, width, height = 20, 80, 40, 60
 #     return transforms.functional.crop(image, left=left, top=top, width=width, height=height)
 class RandomErasing:
-    def __init__(self, probability=1.0, sl=0.02, sh=0.4, r1=0.3, mean=(0.4914, 0.4822, 0.4465)):
+    def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=0.0):
         self.probability = probability
         self.sl = sl
         self.sh = sh
@@ -70,28 +77,23 @@ class RandomErasing:
         self.mean = mean
 
     def __call__(self, img):
-        if random.uniform(0, 1) < self.probability:
-            return self.erase(img)
-        return img
+        if random.uniform(0, 1) > self.probability:
+            return img
+        return self.erase(img)
 
     def erase(self, img):
         c, h, w = img.size()
-        print("c, h, w", c, h, w)
+        # print("self.probability", self.probability)
+        # print("c, h, w", c, h, w)
         area = h * w
 
-        target_area = 0.99 * area  # Erase 99% of the pixels
+        target_area = self.probability * area  # Erase 99% of the pixels
 
         aspect_ratio = random.uniform(self.r1, 1.0)
 
-        h_erase = int(round((target_area * aspect_ratio) ** 0.5))
-        w_erase = int(round((target_area / aspect_ratio) ** 0.5))
-
-        # Ensure the dimensions of the erased rectangle are within bounds
-        if h_erase < h and w_erase < w:
-            i = random.randint(0, h - h_erase)
-            j = random.randint(0, w - w_erase)
-            img[:, i:i + h_erase, j:j + w_erase] = self.mean
-
+        i = 0
+        j = 0
+        img[:, i:i + h, j:j + w] = self.mean
         return img
     
 
@@ -106,7 +108,7 @@ def get_mnist(data_path: str = "./data"):
 
     tr = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))
                 #   ])
-                ,RandomErasing()])
+                ,RandomErasing(probability=args.corruption)])
                 #   ,transforms.Lambda(crop_my_image)])
     
     # handwritten digits 0 - 9. 
@@ -186,8 +188,6 @@ class FlowerClient(fl.client.NumPyClient):
         nextStepLoss, accuracy = test(net, trainloader)
         return nextStepLoss, len(trainloader.dataset), {"accuracy": accuracy}
     
-
-
 
 
 # Start Flower client

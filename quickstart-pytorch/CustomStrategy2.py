@@ -124,12 +124,10 @@ class CustomStrategy2(Strategy):
         self.conn = rpc.PrimesStub(channel)
 
 
-    def send_loss(self, cids, losses, accuracies):
-        # send loss to PRIMES server
+    """send client server loss to PRIMES server"""
+    def send_server_client_loss(self, cids, losses, accuracies):
         response = self.conn.getServerClientLoss(
             primes.lossAndAccuracyRequest(cids=cids, losses=losses, accuracies=accuracies))
-        print("Send Loss: result: ")
-        print(response)
 
 
     def __repr__(self) -> str:
@@ -137,15 +135,18 @@ class CustomStrategy2(Strategy):
         rep = f"FedAvg(accept_failures={self.accept_failures})"
         return rep
 
+
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:
         """Return the sample size and the required number of available clients."""
         num_clients = int(num_available_clients * self.fraction_fit)
         return max(num_clients, self.min_fit_clients), self.min_available_clients
 
+
     def num_evaluation_clients(self, num_available_clients: int) -> Tuple[int, int]:
         """Use a fraction of available clients for evaluation."""
         num_clients = int(num_available_clients * self.fraction_evaluate)
         return max(num_clients, self.min_evaluate_clients), self.min_available_clients
+
 
     def initialize_parameters(
         self, client_manager: ClientManager
@@ -154,6 +155,7 @@ class CustomStrategy2(Strategy):
         initial_parameters = self.initial_parameters
         self.initial_parameters = None  # Don't keep initial parameters in memory
         return initial_parameters
+
 
     def evaluate(
         self, server_round: int, parameters: Parameters
@@ -170,12 +172,11 @@ class CustomStrategy2(Strategy):
         return loss, metrics
 
 
-    # Configure next round of training, choose clients
+    """Configure the next round of training."""
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
         
-        """Configure the next round of training."""
         config = {}
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
@@ -188,33 +189,27 @@ class CustomStrategy2(Strategy):
             client_manager.num_available()
         )
         print("configure_fit")
-        # get clients either from PRIMES or from client_manager
-        if server_round == 1:
-            # get clients from client_manager
+        # 2 random rounds: get clients by sampling random
+        if server_round <= 2:
             clients = client_manager.sample(
                 num_clients=sample_size, min_num_clients=min_num_clients
             )
+        # get clients by ranking nextStepLoss in RPIMES
         else:
-            # get clients from PRIMES
-            print("get clients from PRIMES")
-            print(primes.nextClientsRequest(k=sample_size))
             reply = self.conn.getNextClients(primes.nextClientsRequest(k=sample_size))
-            print("reply: ")
-            print(reply)
             selected_cids = reply.cids
-            print("wowowowowoowow")
-            print(selected_cids)
             clients = [client_manager.clients[cid] for cid in selected_cids]
-            print("clients")
-            print(clients)
 
         # Return client/config pairs
+        print("configure_fit selected clients: ")
+        print([client.cid + ", " for client in clients])
         return [(client, fit_ins) for client in clients]
 
+
+    """Configure the next round of evaluation."""
     def configure_evaluate(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, EvaluateIns]]:
-        """Configure the next round of evaluation."""
         # Do not configure federated evaluation if fraction eval is 0.
         if self.fraction_evaluate == 0.0:
             return []
@@ -227,16 +222,10 @@ class CustomStrategy2(Strategy):
 
         evaluate_ins = EvaluateIns(parameters, config)
 
-        # Sample clients
-        # choose all from recommended cids, choose remaining from client pool
-
-        # sample_size, min_num_clients = self.num_evaluation_clients(
-        #     client_manager.num_available()
-        # )
+        # Sample all clients for evaluation, so they all get latest model
         clients = client_manager.sample(
             num_clients=client_manager.num_available()
         )
-        # client_manager.all()
 
         # Return client/config pairs
         return [(client, evaluate_ins) for client in clients]
@@ -275,14 +264,11 @@ class CustomStrategy2(Strategy):
             losses.append(loss)
             accuracies.append(acc)
 
-            # print(client_parameter)
-            print(f"Client {count} Loss: {loss}, Accuracy: {acc}, cid: {clients_results[count]}")
+            # print(f"Client {count} Loss: {loss}, Accuracy: {acc}, cid: {clients_results[count]}")
             count += 1
             
-        print("send loss: ")
-        # recommended clients sent back to strategy
-        cids = self.send_loss(clients_results, losses, accuracies)
-
+        # send server's client loss to PRIMES server
+        self.send_server_client_loss(clients_results, losses, accuracies)
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
@@ -294,21 +280,19 @@ class CustomStrategy2(Strategy):
 
         return parameters_aggregated, metrics_aggregated
 
+
+    """Aggregate evaluation losses using weighted average."""
     def aggregate_evaluate(
         self,
         server_round: int,
         results: List[Tuple[ClientProxy, EvaluateRes]],
         failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
     ) -> Tuple[Optional[float], Dict[str, Scalar]]:
-        """Aggregate evaluation losses using weighted average."""
         if not results:
             return None, {}
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
-        
-        print("Aggregate Results Loss: ")
-        print(results)
 
         # Aggregate loss
         # NextStepLoss: get from client's evaluate config
@@ -321,13 +305,13 @@ class CustomStrategy2(Strategy):
             next_step_cids.append(proxy.cid)
             next_step_losses.append(evaluate_res.metrics["next_step_loss"])
             next_step_accuracies.append(evaluate_res.metrics["accuracy"])
+            print(f"client {proxy.cid} accuracy: {next_step_accuracies[-1]} nextStepLoss : {next_step_losses[-1]}")
         
         response = self.conn.getNextStepLoss(
             primes.lossAndAccuracyRequest(cids=next_step_cids, 
                                           losses=next_step_losses, 
                                           accuracies=next_step_accuracies)
         )
-        print(f"Next step loss: {response}")
         
         loss_aggregated = weighted_loss_avg(
             [

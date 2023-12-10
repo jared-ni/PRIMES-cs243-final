@@ -20,10 +20,8 @@ class PrimesServicer(rpc.PrimesServicer):
         self.server_clients = {}
         self.next_step_clients = {}
 
+        # TODO 
         self.payments = {}
-
-        self.server_lock = threading.Lock()
-        self.next_step_lock = threading.Lock()
 
 
     # function to gather current round of loss
@@ -36,7 +34,6 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.next_step_clients[cid].append((loss, accuracy))
             else:
                 self.next_step_clients[cid] = [(loss, accuracy)]
-            print(cid, loss, accuracy, end=" ")
             
         return primes.ServerReply(status="OK")
 
@@ -51,33 +48,23 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.server_clients[cid].append((loss, accuracy))
             else:
                 self.server_clients[cid] = [(loss, accuracy)]
-
-            # print without printing \n
-
-            print(cid, loss, accuracy, end=" ")
         
         return primes.ServerReply(status="OK")
     
+
+    # config fit: get next step's clients
     def getNextClients(self, request: primes.nextClientsRequest, context):
         k = request.k
         ranked_clients = []
-        print("getNextClients")
-        print(self.next_step_clients)
-        print(":::")
-        print(self.server_clients)
-        print("______")
 
         # average client server loss
-
         avg_server_loss = sum([self.server_clients[cid][-1][0] for cid in self.server_clients]) / len(self.server_clients)
 
         for cid in self.server_clients:
-            print("cid", cid)
-            print("self.next_step_clients[cid]", self.next_step_clients[cid])
-            print("self.server_clients[cid]", self.server_clients[cid])
+            # selection is 100% based on next step loss
+            key = self.next_step_clients[cid][-1][0]
 
-            print("1")
-
+            """client payment function"""
             # # what if client hasn't been selected yet? 
             # if cid in self.next_step_clients and cid in self.server_clients:
             #     key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
@@ -85,25 +72,13 @@ class PrimesServicer(rpc.PrimesServicer):
             # elif cid in self.next_step_clients:
             #     key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
             #            WEIGHTS["SERVER_LOSS"] *  avg_server_loss)
-                
-            # selection is 100% based on next step loss
-            key = self.next_step_clients[cid][-1][0]
-            
-            print("2) key", key)
 
             ranked_clients.append((cid, key))
 
-        print("3) ranked_clients", ranked_clients)
         ranked_clients = sorted(ranked_clients, key=lambda client: client[1])
-        print("4) ranked_clients", ranked_clients)
         ranked_cids = [cid for (cid, _weight) in ranked_clients]
 
         selected_cids = ranked_cids[:k]
-
-        print("5) selected_cids", selected_cids)
-
-        print("getNextClients")
-        print(primes.nextClientsReply(cids=selected_cids))
         return primes.nextClientsReply(cids=selected_cids)
 
 
