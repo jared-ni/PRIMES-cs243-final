@@ -11,8 +11,13 @@ sleep 5  # Sleep for 3s to give the server enough time to start
 
 for i in `seq 0 3`; do
     echo "Starting client $i"
-    python client.py &
+    python client.py --fraction 1000 &
 done
+
+# for i in `seq `; do
+#     echo "Starting client $i"
+#     python client.py --fraction 1000 &
+# done
 
 # Enable CTRL+C to stop all background processes
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM

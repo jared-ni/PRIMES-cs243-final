@@ -15,20 +15,33 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 import torchvision.transforms as transforms
-from torchvision.transforms import Compose, Normalize, ToTensor, RandomErasing
+from torchvision.transforms import Compose, Normalize, ToTensor
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 from dataset import random_split
 from torchvision.datasets import MNIST
+import argparse
+
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
+parser = argparse.ArgumentParser(description="Flower")
+parser.add_argument(
+    "--fraction",
+    type=int,
+    default=False,
+    required=False,
+    help="decides the fraction of data client has",
+)
+args = parser.parse_args()
+
+
 # client data quality
-data_quality = random.uniform(0, 1)
-data_amount = random.randint(15, 1000)
+# data_amount = random.randint(15, 1000)
 
 def test(net, testloader):
     """Validate the model on the test set."""
@@ -48,17 +61,55 @@ def test(net, testloader):
 #     """Crop the images so only a specific region of interest is shown to my PyTorch model"""
 #     left, right, width, height = 20, 80, 40, 60
 #     return transforms.functional.crop(image, left=left, top=top, width=width, height=height)
+class RandomErasing:
+    def __init__(self, probability=1.0, sl=0.02, sh=0.4, r1=0.3, mean=(0.4914, 0.4822, 0.4465)):
+        self.probability = probability
+        self.sl = sl
+        self.sh = sh
+        self.r1 = r1
+        self.mean = mean
 
+    def __call__(self, img):
+        if random.uniform(0, 1) < self.probability:
+            return self.erase(img)
+        return img
+
+    def erase(self, img):
+        c, h, w = img.size()
+        print("c, h, w", c, h, w)
+        area = h * w
+
+        target_area = 0.99 * area  # Erase 99% of the pixels
+
+        aspect_ratio = random.uniform(self.r1, 1.0)
+
+        h_erase = int(round((target_area * aspect_ratio) ** 0.5))
+        w_erase = int(round((target_area / aspect_ratio) ** 0.5))
+
+        # Ensure the dimensions of the erased rectangle are within bounds
+        if h_erase < h and w_erase < w:
+            i = random.randint(0, h - h_erase)
+            j = random.randint(0, w - w_erase)
+            img[:, i:i + h_erase, j:j + w_erase] = self.mean
+
+        return img
+    
 
 def get_mnist(data_path: str = "./data"):
     # determines data quality
     # erase_probability = random.uniform(0, 1)
     erase_probability = 1
     
+    # apply transformation to mess up this dataset by randomly pruning out some pixels
+    # use random erasing to prune 95% of the image
+
+
     tr = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))
-                  ])
+                #   ])
+                ,RandomErasing()])
                 #   ,transforms.Lambda(crop_my_image)])
     
+    # handwritten digits 0 - 9. 
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
     testset = MNIST(data_path, train=False, download=True, transform=tr)
 
@@ -67,11 +118,8 @@ def get_mnist(data_path: str = "./data"):
 
 def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
     trainset, testset = get_mnist()
-    # num_partitions = random.randint(15, 1000)
-    # pick random among {5, 100, 1000}
-    num_partitions = random.choice([5, 100, 1000])
-    # num_partitions = 1000
-    # return DataLoader(trainset, batch_size=32, shuffle=True), DataLoader(testset)
+    print("num_partitions", num_partitions)
+
     num_images = len(trainset) // num_partitions
     partition_len = [num_images] * num_partitions
 
@@ -105,10 +153,7 @@ def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
 
 # Load model and data (simple CNN, CIFAR-10)
 net = Net().to(DEVICE)
-# trainloader, testloader = load_data()
-trainloader, testloader = prepare_data(5000, 20)
-# trainloaders, testloaders, _ = dataset.prepare_dataset(100, 20)
-# trainloader, testloader = trainloaders[0], testloaders[0]
+trainloader, testloader = prepare_data(args.fraction, 20)
 
 # Define Flower client
 class FlowerClient(fl.client.NumPyClient):

@@ -20,6 +20,8 @@ class PrimesServicer(rpc.PrimesServicer):
         self.server_clients = {}
         self.next_step_clients = {}
 
+        self.payments = {}
+
         self.server_lock = threading.Lock()
         self.next_step_lock = threading.Lock()
 
@@ -76,13 +78,16 @@ class PrimesServicer(rpc.PrimesServicer):
 
             print("1")
 
-            # what if client hasn't been selected yet? 
-            if cid in self.next_step_clients and cid in self.server_clients:
-                key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
-                       WEIGHTS["SERVER_LOSS"] *  self.server_clients[cid][-1][0])
-            elif cid in self.next_step_clients:
-                key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
-                       WEIGHTS["SERVER_LOSS"] *  avg_server_loss)
+            # # what if client hasn't been selected yet? 
+            # if cid in self.next_step_clients and cid in self.server_clients:
+            #     key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
+            #            WEIGHTS["SERVER_LOSS"] *  self.server_clients[cid][-1][0])
+            # elif cid in self.next_step_clients:
+            #     key = (WEIGHTS["NEXT_STEP"] * self.next_step_clients[cid][-1][0] + 
+            #            WEIGHTS["SERVER_LOSS"] *  avg_server_loss)
+                
+            # selection is 100% based on next step loss
+            key = self.next_step_clients[cid][-1][0]
             
             print("2) key", key)
 
