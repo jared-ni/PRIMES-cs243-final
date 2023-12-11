@@ -24,11 +24,11 @@ message lossAndAccuracyRequest {
     repeated float accuracies = 3;
 }
 
-message nextClientsRequest {
+message nextPrimesClientsRequest {
     int32 k = 1;
 }
 
-message nextClientsReply {
+message nextPrimesClientsReply {
     repeated string cids = 1;
 }
 
@@ -36,9 +36,19 @@ message ServerReply {
     string status = 1;
 }
 
+message nextClippingClientsRequest {
+    int32 k = 1;
+    repeated string cids = 2;
+}
+
+message nextClippingClientsReply {
+    repeated string cids = 1;
+}
+
 
 service Primes {
     rpc getNextStepLoss(lossAndAccuracyRequest) returns (ServerReply);
     rpc getServerClientLoss(lossAndAccuracyRequest) returns (ServerReply);
-    rpc getNextClients(nextClientsRequest) returns (nextClientsReply);
+    rpc getNextPrimesClients(nextPrimesClientsRequest) returns (nextPrimesClientsReply);
+    rpc getNextClippingClients(nextClippingClientsRequest) returns (nextClippingClientsReply);
 }

@@ -8,6 +8,7 @@ import primes_pb2_grpc as rpc
 import torch
 import flwr as fl
 import threading
+import random
 
 from FL.model import Net, train, test
 
@@ -26,6 +27,9 @@ class PrimesServicer(rpc.PrimesServicer):
 
         # TODO 
         self.payments = {}
+
+        self.history = [] # list of lists
+        self.banned = set()
 
 
     # function to gather current round of loss
@@ -59,7 +63,7 @@ class PrimesServicer(rpc.PrimesServicer):
     
 
     # config fit: get next step's clients
-    def getNextClients(self, request: primes.nextClientsRequest, context):
+    def getNextPrimesClients(self, request: primes.nextPrimesClientsRequest, context):
         k = request.k
         ranked_clients = []
 
@@ -85,7 +89,35 @@ class PrimesServicer(rpc.PrimesServicer):
         ranked_cids = [cid for (cid, _weight) in ranked_clients]
 
         selected_cids = ranked_cids[:k]
-        return primes.nextClientsReply(cids=selected_cids)
+        # self.history.append(selected_cids)
+
+        return primes.nextPrimesClientsReply(cids=selected_cids)
+    
+    def getNextClippingClients(self, request: primes.nextClippingClientsRequest, context):
+        PREV_ROUNDS = 2
+        k = request.k
+        client_cids = request.cids
+
+        print(f"Request sample size {k} out of {len(client_cids)} clients.")
+
+        print(f"ROUND {len(self.history)+1} banned set size:", len(self.banned))
+        
+        all_clients = set(client_cids)
+        available_clients = all_clients.difference(self.banned)
+
+        selected_cids = random.sample(list(available_clients), k)
+        self.history.append(selected_cids)
+
+        if len(self.history) >= PREV_ROUNDS:
+            for cid in selected_cids:
+                present_count = 0
+                for round in self.history[-PREV_ROUNDS:]: 
+                    if cid in round:
+                        present_count +=1
+                if present_count == PREV_ROUNDS:
+                    self.banned.add(cid)
+
+        return primes.nextPrimesClientsReply(cids=selected_cids)
 
 
 if __name__ == '__main__':

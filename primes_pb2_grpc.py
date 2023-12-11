@@ -24,10 +24,15 @@ class PrimesStub(object):
                 request_serializer=primes__pb2.lossAndAccuracyRequest.SerializeToString,
                 response_deserializer=primes__pb2.ServerReply.FromString,
                 )
-        self.getNextClients = channel.unary_unary(
-                '/helper.Primes/getNextClients',
-                request_serializer=primes__pb2.nextClientsRequest.SerializeToString,
-                response_deserializer=primes__pb2.nextClientsReply.FromString,
+        self.getNextPrimesClients = channel.unary_unary(
+                '/helper.Primes/getNextPrimesClients',
+                request_serializer=primes__pb2.nextPrimesClientsRequest.SerializeToString,
+                response_deserializer=primes__pb2.nextPrimesClientsReply.FromString,
+                )
+        self.getNextClippingClients = channel.unary_unary(
+                '/helper.Primes/getNextClippingClients',
+                request_serializer=primes__pb2.nextClippingClientsRequest.SerializeToString,
+                response_deserializer=primes__pb2.nextClippingClientsReply.FromString,
                 )
 
 
@@ -46,7 +51,13 @@ class PrimesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def getNextClients(self, request, context):
+    def getNextPrimesClients(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def getNextClippingClients(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -65,10 +76,15 @@ def add_PrimesServicer_to_server(servicer, server):
                     request_deserializer=primes__pb2.lossAndAccuracyRequest.FromString,
                     response_serializer=primes__pb2.ServerReply.SerializeToString,
             ),
-            'getNextClients': grpc.unary_unary_rpc_method_handler(
-                    servicer.getNextClients,
-                    request_deserializer=primes__pb2.nextClientsRequest.FromString,
-                    response_serializer=primes__pb2.nextClientsReply.SerializeToString,
+            'getNextPrimesClients': grpc.unary_unary_rpc_method_handler(
+                    servicer.getNextPrimesClients,
+                    request_deserializer=primes__pb2.nextPrimesClientsRequest.FromString,
+                    response_serializer=primes__pb2.nextPrimesClientsReply.SerializeToString,
+            ),
+            'getNextClippingClients': grpc.unary_unary_rpc_method_handler(
+                    servicer.getNextClippingClients,
+                    request_deserializer=primes__pb2.nextClippingClientsRequest.FromString,
+                    response_serializer=primes__pb2.nextClippingClientsReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -115,7 +131,7 @@ class Primes(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def getNextClients(request,
+    def getNextPrimesClients(request,
             target,
             options=(),
             channel_credentials=None,
@@ -125,8 +141,25 @@ class Primes(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/helper.Primes/getNextClients',
-            primes__pb2.nextClientsRequest.SerializeToString,
-            primes__pb2.nextClientsReply.FromString,
+        return grpc.experimental.unary_unary(request, target, '/helper.Primes/getNextPrimesClients',
+            primes__pb2.nextPrimesClientsRequest.SerializeToString,
+            primes__pb2.nextPrimesClientsReply.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getNextClippingClients(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/helper.Primes/getNextClippingClients',
+            primes__pb2.nextClippingClientsRequest.SerializeToString,
+            primes__pb2.nextClippingClientsReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

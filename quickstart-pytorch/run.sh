@@ -9,30 +9,35 @@ echo "Starting server"
 python server.py &
 sleep 5  # Sleep for 3s to give the server enough time to start
 
-for i in `seq 0 9`; do
-    echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.9 &
-done
-
-for i in `seq 10 19`; do
-    echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.7 &
-done
-
-for i in `seq 20 29`; do
-    echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.5 &
-done
-
-for i in `seq 30 39`; do
+for i in `seq 0 14`; do
     echo "Starting client $i"
     python client.py --fraction 50 --corruption 0.3 &
 done
 
-for i in `seq 40 49`; do
-    echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.1 &
-done
+# for i in `seq 0 9`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.9 &
+# done
+
+# for i in `seq 10 19`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.7 &
+# done
+
+# for i in `seq 20 29`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.5 &
+# done
+
+# for i in `seq 30 39`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.3 &
+# done
+
+# for i in `seq 40 49`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.1 &
+# done
 
 
 

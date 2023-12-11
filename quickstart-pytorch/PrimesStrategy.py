@@ -196,7 +196,7 @@ class PrimesStrategy(Strategy):
             )
         # get clients by ranking nextStepLoss in RPIMES
         else:
-            reply = self.conn.getNextClients(primes.nextClientsRequest(k=sample_size))
+            reply = self.conn.getNextPrimesClients(primes.nextPrimesClientsRequest(k=sample_size))
             selected_cids = reply.cids
             clients = [client_manager.clients[cid] for cid in selected_cids]
 
