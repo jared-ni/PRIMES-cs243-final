@@ -37,9 +37,20 @@ _trainloaders, _validationloaders, testloader = prepare_dataset(
 #     evaluate_fn=get_evaluate_fn(10, testloader),
 # )
 
-strategy = ClippingStrategy(
+# strategy = ClippingStrategy(
+#     fraction_fit=0.2,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+#     min_fit_clients=10,  # number of clients to sample for fit()
+#     fraction_evaluate=1.0,  # similar to fraction_fit, we don't need to use this argument.
+#     min_evaluate_clients=3,  # number of clients to sample for evaluate()
+#     min_available_clients=3,  # total clients in the simulation
+#     evaluate_metrics_aggregation_fn=weighted_average,
+#     on_fit_config_fn=get_on_fit_config(0.1, 0.9, 1), 
+#     evaluate_fn=get_evaluate_fn(10, testloader),
+# )
+
+strategy = PrimesStrategy(
     fraction_fit=0.2,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
-    min_fit_clients=3,  # number of clients to sample for fit()
+    min_fit_clients=10,  # number of clients to sample for fit()
     fraction_evaluate=1.0,  # similar to fraction_fit, we don't need to use this argument.
     min_evaluate_clients=3,  # number of clients to sample for evaluate()
     min_available_clients=3,  # total clients in the simulation
@@ -48,12 +59,10 @@ strategy = ClippingStrategy(
     evaluate_fn=get_evaluate_fn(10, testloader),
 )
 
-# 
-
 # Start Flower server
 fl.server.start_server(
     server_address="0.0.0.0:8080",
-    config=fl.server.ServerConfig(num_rounds=30),
+    config=fl.server.ServerConfig(num_rounds=41),
     strategy=strategy,
     client_manager=CustomClientManager(),
 )
