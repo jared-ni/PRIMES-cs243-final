@@ -9,6 +9,7 @@ echo "Starting server"
 python server.py --dataset 1 &
 sleep 5  # Sleep for 3s to give the server enough time to start
 
+<<<<<<< HEAD
 for i in `seq 0 39`; do
     echo "Starting client $i"
     python client.py --fraction 50 --corruption 0.6 --dataset 1 &
@@ -18,6 +19,22 @@ for i in `seq 0 9`; do
     echo "Starting client $i"
     python client.py --fraction 10 --corruption 0.1 --dataset 1 &
 done
+=======
+for i in `seq 0 14`; do
+    echo "Starting client $i"
+    python client.py --fraction 50 --corruption 0.3 &
+done
+
+# for i in `seq 0 9`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.9 &
+# done
+
+# for i in `seq 10 19`; do
+#     echo "Starting client $i"
+#     python client.py --fraction 50 --corruption 0.7 &
+# done
+>>>>>>> 09c1f1fe25e64e438b7e57e37718adce8facb91b
 
 # for i in `seq 20 29`; do
 #     echo "Starting client $i"

@@ -1,6 +1,5 @@
 from logging import WARNING
 from typing import Callable, Dict, List, Optional, Tuple, Union
-
 from flwr.common import (
     EvaluateIns,
     EvaluateRes,
@@ -16,7 +15,6 @@ from flwr.common import (
 from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
-
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from flwr.server.strategy import Strategy
 
@@ -26,6 +24,7 @@ sys.path.append("..")
 import primes_pb2_grpc as rpc
 import primes_pb2 as primes
 
+
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
 `min_evaluate_clients` can cause the server to fail when there are too few clients
@@ -34,7 +33,7 @@ than or equal to the values of `min_fit_clients` and `min_evaluate_clients`.
 """
 
 
-class PrimesStrategy(Strategy):
+class ClippingStrategy(Strategy):
     """Configurable FedAvg strategy implementation."""
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
@@ -59,41 +58,6 @@ class PrimesStrategy(Strategy):
         fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
         evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
     ) -> None:
-        """Federated Averaging strategy.
-
-        Implementation based on https://arxiv.org/abs/1602.05629
-
-        Parameters
-        ----------
-        fraction_fit : float, optional
-            Fraction of clients used during training. In case `min_fit_clients`
-            is larger than `fraction_fit * available_clients`, `min_fit_clients`
-            will still be sampled. Defaults to 1.0.
-        fraction_evaluate : float, optional
-            Fraction of clients used during validation. In case `min_evaluate_clients`
-            is larger than `fraction_evaluate * available_clients`,
-            `min_evaluate_clients` will still be sampled. Defaults to 1.0.
-        min_fit_clients : int, optional
-            Minimum number of clients used during training. Defaults to 2.
-        min_evaluate_clients : int, optional
-            Minimum number of clients used during validation. Defaults to 2.
-        min_available_clients : int, optional
-            Minimum number of total clients in the system. Defaults to 2.
-        evaluate_fn : Optional[Callable[[int, NDArrays, Dict[str, Scalar]], Optional[Tuple[float, Dict[str, Scalar]]]]]
-            Optional function used for validation. Defaults to None.
-        on_fit_config_fn : Callable[[int], Dict[str, Scalar]], optional
-            Function used to configure training. Defaults to None.
-        on_evaluate_config_fn : Callable[[int], Dict[str, Scalar]], optional
-            Function used to configure validation. Defaults to None.
-        accept_failures : bool, optional
-            Whether or not accept rounds containing failures. Defaults to True.
-        initial_parameters : Parameters, optional
-            Initial global model parameters.
-        fit_metrics_aggregation_fn : Optional[MetricsAggregationFn]
-            Metrics aggregation function, optional.
-        evaluate_metrics_aggregation_fn : Optional[MetricsAggregationFn]
-            Metrics aggregation function, optional.
-        """
         super().__init__()
 
         if (
@@ -124,17 +88,10 @@ class PrimesStrategy(Strategy):
         self.conn = rpc.PrimesStub(channel)
 
 
-    """send client server loss to PRIMES server"""
-    def send_server_client_loss(self, cids, losses, accuracies):
-        response = self.conn.getServerClientLoss(
-            primes.lossAndAccuracyRequest(cids=cids, losses=losses, accuracies=accuracies))
-
-
     def __repr__(self) -> str:
         """Compute a string representation of the strategy."""
         rep = f"FedAvg(accept_failures={self.accept_failures})"
         return rep
-
 
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:
         """Return the sample size and the required number of available clients."""
@@ -188,21 +145,16 @@ class PrimesStrategy(Strategy):
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
-        print("configure_fit")
-        # 2 random rounds: get clients by sampling random
-        if server_round <= 3:
-            clients = client_manager.sample(
-                num_clients=sample_size, min_num_clients=min_num_clients
-            )
-        # get clients by ranking nextStepLoss in RPIMES
-        else:
-            reply = self.conn.getNextPrimesClients(primes.nextPrimesClientsRequest(k=sample_size))
-            selected_cids = reply.cids
-            clients = [client_manager.clients[cid] for cid in selected_cids]
+        # clients = client_manager.sample(
+        #     num_clients=sample_size, min_num_clients=min_num_clients
+        # )
 
-        # Return client/config pairs
-        print(f"configure_fit {server_round}selected clients: ")
-        print([client.cid + " " for client in clients])
+        cids = [cid for cid in client_manager.all()]
+        
+        reply = self.conn.getNextClippingClients(primes.nextClippingClientsRequest(k=sample_size, cids=cids))
+        selected_cids = reply.cids
+        clients = [client_manager.clients[cid] for cid in selected_cids]
+
         return [(client, fit_ins) for client in clients]
 
 
@@ -249,26 +201,6 @@ class PrimesStrategy(Strategy):
             for _, fit_res in results
         ]
         parameters_aggregated = ndarrays_to_parameters(aggregate(weights_results))
-        
-        clients_results = [ client.cid for client, _ in results ]
-        losses = []
-        accuracies = []
-
-        count = 0
-        for client_parameter, _ in weights_results:
-            # evaluate client's loss
-            loss, acc = self.evaluate_fn(server_round, client_parameter, {})
-            if "accuracy" in acc:
-                acc = acc["accuracy"]
-
-            losses.append(loss)
-            accuracies.append(acc)
-
-            # print(f"Client {count} Loss: {loss}, Accuracy: {acc}, cid: {clients_results[count]}")
-            count += 1
-            
-        # send server's client loss to PRIMES server
-        self.send_server_client_loss(clients_results, losses, accuracies)
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
@@ -279,7 +211,7 @@ class PrimesStrategy(Strategy):
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
         return parameters_aggregated, metrics_aggregated
-
+    
 
     """Aggregate evaluation losses using weighted average."""
     def aggregate_evaluate(
@@ -293,25 +225,7 @@ class PrimesStrategy(Strategy):
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
-
-        # Aggregate loss
-        # NextStepLoss: get from client's evaluate config
-        # EvaluateRes from metrics of client evaluate
-
-        next_step_cids = []
-        next_step_losses = []
-        next_step_accuracies = []
-        for proxy, evaluate_res in results:
-            next_step_cids.append(proxy.cid)
-            next_step_losses.append(evaluate_res.metrics["next_step_loss"])
-            next_step_accuracies.append(evaluate_res.metrics["accuracy"])
-            print(f"client {proxy.cid} accuracy: {next_step_accuracies[-1]} nextStepLoss : {next_step_losses[-1]}")
         
-        response = self.conn.getNextStepLoss(
-            primes.lossAndAccuracyRequest(cids=next_step_cids, 
-                                          losses=next_step_losses, 
-                                          accuracies=next_step_accuracies)
-        )
         
         loss_aggregated = weighted_loss_avg(
             [
