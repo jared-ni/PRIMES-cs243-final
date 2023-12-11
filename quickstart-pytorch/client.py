@@ -85,8 +85,13 @@ class RandomErasing:
         c, h, w = img.size()
         i = 0
         j = 0
-        img[:, i:i + h, j:j + w] = self.mean
         # mean is 3 channels instead of 1
+        if args.dataset == 1:
+            img[:, i:i + h, j:j + w] = self.mean
+        else:
+            img[0, i:i + h, j:j + w] = 0.0
+            img[1, i:i + h, j:j + w] = 0.0
+            img[2, i:i + h, j:j + w] = 0.0
 
         return img
     
@@ -106,7 +111,7 @@ def get_cifar10(data_path: str = "./data"):
     # apply transformation to corrupt the dataset by randomly pruning out some pixels
     tr = Compose([ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], 
                                         std=[0.229, 0.224, 0.225])
-                 ,RandomErasing(probability=args.corruption, mean=[0.0, 0.0, 0.0])])
+                 ,RandomErasing(probability=args.corruption, mean=0.0)])
 
     # 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
     trainset = CIFAR10(data_path, train=True, download=True, transform=tr)
