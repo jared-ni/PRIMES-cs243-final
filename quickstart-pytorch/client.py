@@ -99,18 +99,14 @@ def get_mnist(data_path: str = "./data"):
     # handwritten digits 0 - 9. 
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
     testset = MNIST(data_path, train=False, download=True, transform=tr)
-
-
-    print("client data!!!!!") 
-    print(trainset[0])
     return trainset, testset
 
 
 def get_cifar10(data_path: str = "./data"):
     # apply transformation to corrupt the dataset by randomly pruning out some pixels
     tr = Compose([ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], 
-                                        std=[0.229, 0.224, 0.225])])
-                #  ,RandomErasing(probability=args.corruption, mean=[0.0, 0.0, 0.0])])
+                                        std=[0.229, 0.224, 0.225])
+                 ,RandomErasing(probability=args.corruption, mean=[0.0, 0.0, 0.0])])
 
     # 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
     trainset = CIFAR10(data_path, train=True, download=True, transform=tr)

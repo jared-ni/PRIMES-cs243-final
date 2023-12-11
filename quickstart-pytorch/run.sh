@@ -6,50 +6,33 @@ cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/
 python -c "from torchvision.datasets import CIFAR10; CIFAR10('./data', download=True)"
 
 echo "Starting server"
-python server.py --dataset 1 &
+python server.py --dataset 2 &
 sleep 5  # Sleep for 3s to give the server enough time to start
-
-<<<<<<< HEAD
-for i in `seq 0 39`; do
-    echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.6 --dataset 1 &
-done
 
 for i in `seq 0 9`; do
     echo "Starting client $i"
-    python client.py --fraction 10 --corruption 0.1 --dataset 1 &
+    python client.py --fraction 25 --corruption 0.9 --dataset 2 &
 done
-=======
-for i in `seq 0 14`; do
+
+for i in `seq 10 19`; do
     echo "Starting client $i"
-    python client.py --fraction 50 --corruption 0.3 &
+    python client.py --fraction 25 --corruption 0.7 --dataset 2 &
 done
 
-# for i in `seq 0 9`; do
-#     echo "Starting client $i"
-#     python client.py --fraction 50 --corruption 0.9 &
-# done
+for i in `seq 20 29`; do
+    echo "Starting client $i"
+    python client.py --fraction 25 --corruption 0.5 --dataset 2 &
+done
 
-# for i in `seq 10 19`; do
-#     echo "Starting client $i"
-#     python client.py --fraction 50 --corruption 0.7 &
-# done
->>>>>>> 09c1f1fe25e64e438b7e57e37718adce8facb91b
+for i in `seq 30 39`; do
+    echo "Starting client $i"
+    python client.py --fraction 25 --corruption 0.3 --dataset 2 &
+done
 
-# for i in `seq 20 29`; do
-#     echo "Starting client $i"
-#     python client.py --fraction 50 --corruption 0.5 &
-# done
-
-# for i in `seq 30 39`; do
-#     echo "Starting client $i"
-#     python client.py --fraction 50 --corruption 0.3 &
-# done
-
-# for i in `seq 40 49`; do
-#     echo "Starting client $i"
-#     python client.py --fraction 50 --corruption 0.1 &
-# done
+for i in `seq 40 49`; do
+    echo "Starting client $i"
+    python client.py --fraction 25 --corruption 0.1 --dataset 2 &
+done
 
 
 

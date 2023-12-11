@@ -42,9 +42,7 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.next_step_clients[cid].append((loss, accuracy))
             else:
                 self.next_step_clients[cid] = [(loss, accuracy)]
-            
-            print(f"cid: {cid}, loss: {loss}, accuracy: {accuracy}")
-            
+                        
         return primes.ServerReply(status="OK")
 
 
@@ -58,10 +56,6 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.server_clients[cid].append((loss, accuracy))
             else:
                 self.server_clients[cid] = [(loss, accuracy)]
-
-            # print without printing \n
-
-            print(cid, loss, accuracy, end=" ")
         
         return primes.ServerReply(status="OK")
     
@@ -96,6 +90,7 @@ class PrimesServicer(rpc.PrimesServicer):
         # self.history.append(selected_cids)
 
         return primes.nextPrimesClientsReply(cids=selected_cids)
+    
     
     def getNextClippingClients(self, request: primes.nextClippingClientsRequest, context):
         PREV_ROUNDS = 2
