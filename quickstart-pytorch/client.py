@@ -42,9 +42,17 @@ parser.add_argument(
     required=False,
     help="decides the probability (0 to 1) of zeroing out images in the dataset",
 )
+parser.add_argument(
+    "--dataset",
+    type=int,
+    default=False,
+    required=False,
+    help="decides the dataset: MNIST (1) or CIFAR10 (2)",
+)
 args = parser.parse_args()
 
 print("corruption level: ", args.corruption)
+print("dataset: ", args.dataset)
 
 def test(net, testloader):
     """Validate the model on the test set."""
@@ -61,7 +69,7 @@ def test(net, testloader):
 
 
 class RandomErasing:
-    def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=0.0):
+    def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=0):
         self.probability = probability
         self.sl = sl
         self.sh = sh
@@ -78,29 +86,45 @@ class RandomErasing:
         i = 0
         j = 0
         img[:, i:i + h, j:j + w] = self.mean
+        # mean is 3 channels instead of 1
+
         return img
     
 
 def get_mnist(data_path: str = "./data"):
     # apply transformation to corrupt the dataset by randomly pruning out some pixels
     tr = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))
-                ,RandomErasing(probability=args.corruption)])
+                ,RandomErasing(probability=args.corruption, mean=0.0)])
     
     # handwritten digits 0 - 9. 
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
     testset = MNIST(data_path, train=False, download=True, transform=tr)
+    return trainset, testset
 
+
+def get_cifar10(data_path: str = "./data"):
+    # apply transformation to corrupt the dataset by randomly pruning out some pixels
+    tr = Compose([ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], 
+                                        std=[0.229, 0.224, 0.225])])
+                #  ,RandomErasing(probability=args.corruption, mean=[0.0, 0.0, 0.0])])
+
+    # 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
+    trainset = CIFAR10(data_path, train=True, download=True, transform=tr)
+    testset = CIFAR10(data_path, train=False, download=True, transform=tr)
     return trainset, testset
 
 
 def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
-    trainset, testset = get_mnist()
-    print("num_partitions", num_partitions)
+    trainset, testset = None, None
+    if args.dataset == 1:
+        print("MNIST")
+        trainset, testset = get_mnist()
+    else:
+        print("CIFAR10")
+        trainset, testset = get_cifar10()
 
     num_images = len(trainset) // num_partitions
     partition_len = [num_images] * num_partitions
-
-    print("num_images", num_images)
 
     trainsets = random_split(
         trainset, partition_len, torch.Generator().manual_seed(2023)
@@ -127,21 +151,23 @@ def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
 
 
 # Load model and data (simple CNN, CIFAR-10)
-net = Net().to(DEVICE)
+channels = 1 if args.dataset == 1 else 3
+net = Net(channels=channels).to(DEVICE)
 trainloader, testloader = prepare_data(args.fraction, 20)
+
 
 # Define Flower client
 class FlowerClient(fl.client.NumPyClient):
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
+
     def set_parameters(self, parameters: NDArrays):
         """Receive parameters and apply them to the local model."""
         params_dict = zip(net.state_dict().keys(), parameters)
-        # print("Parameters shapes:")
-        # print([len(x) for x in parameters])
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         net.load_state_dict(state_dict, strict=True)
+
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)

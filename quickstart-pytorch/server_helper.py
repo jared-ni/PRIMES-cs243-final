@@ -30,7 +30,7 @@ def get_on_fit_config(lr, momentum, local_epochs):
     return fit_config_fn
 
 
-def get_evaluate_fn(num_classes: int, testloader):
+def get_evaluate_fn(num_classes: int, testloader, channels: int = 1):
     """Define function for global evaluation on the server."""
 
     def evaluate_fn(server_round: int, parameters, config):
@@ -40,7 +40,9 @@ def get_evaluate_fn(num_classes: int, testloader):
         # this function takes these parameters and evaluates the global model
         # on a evaluation / test dataset.
 
-        model = Net(num_classes)
+        print("get_evaluate_fn")
+        
+        model = Net(num_classes, channels)
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import ToTensor, Normalize, Compose
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, CIFAR10
 
 import bisect
 import warnings
@@ -24,23 +24,35 @@ from torch._utils import _accumulate
 from torch import Tensor, Generator
 
 
-
+"""MNIST Dataset"""
 def get_mnist(data_path: str = "./data"):
-    """Download MNIST and apply minimal transformation."""
-
     tr = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
-
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
     testset = MNIST(data_path, train=False, download=True, transform=tr)
-
     return trainset, testset
 
 
-def prepare_dataset(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
+"""CIFAR10 Dataset"""
+def get_cifar10(data_path: str = "./data"):
+    # apply transformation to corrupt the dataset by randomly pruning out some pixels
+    tr = Compose([ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], 
+                                        std=[0.229, 0.224, 0.225])])
+    # 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
+    trainset = CIFAR10(data_path, train=True, download=True, transform=tr)
+    testset = CIFAR10(data_path, train=False, download=True, transform=tr)
+    return trainset, testset
+
+
+def prepare_dataset(dataset: int, num_partitions: int, 
+                    batch_size: int, val_ratio: float = 0.1):
     """Download MNIST and generate IID partitions."""
 
-    # download MNIST in case it's not already in the system
-    trainset, testset = get_mnist()
+    if dataset == 1:
+        # MNIST
+        trainset, testset = get_mnist()
+    else:
+        # CIFAR10
+        trainset, testset = get_cifar10()
 
     # split trainset into `num_partitions` trainsets (one per client)
     # figure out number of training examples per partition
@@ -59,6 +71,7 @@ def prepare_dataset(num_partitions: int, batch_size: int, val_ratio: float = 0.1
         trainset, partition_len, torch.Generator().manual_seed(2023)
     )
 
+    print("after random split server")
     # create dataloaders with train+val support
     trainloaders = []
     valloaders = []
