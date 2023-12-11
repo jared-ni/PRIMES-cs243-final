@@ -1,6 +1,6 @@
 ### Installing Dependencies
 
-Project dependencies (such as `torch` and `flwr`) are defined in `pyproject.toml` and `requirements.txt`. We recommend [Poetry](https://python-poetry.org/docs/) to install those dependencies and manage your virtual environment ([Poetry installation](https://python-poetry.org/docs/#installation)) or [pip](https://pip.pypa.io/en/latest/development/), but feel free to use a different way of installing dependencies and managing virtual environments if you have other preferences.
+Project dependencies (such as `torch` and `flwr`) are defined in `./pytorch_quickstart/pyproject.toml` and `requirements.txt`. We recommend [Poetry](https://python-poetry.org/docs/) to install those dependencies and manage your virtual environment ([Poetry installation](https://python-poetry.org/docs/#installation)) or [pip](https://pip.pypa.io/en/latest/development/), but feel free to use a different way of installing dependencies and managing virtual environments if you have other preferences.
 
 ### running experiments
 To run experiments using a select strategy, uncomment the strategy among {PrimesStrategy, ClippingStrategy, NormalFedAvg} you wish to use in ./pytorch_quickstart/server.py and uncomment the rest. 
