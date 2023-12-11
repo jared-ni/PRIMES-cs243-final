@@ -37,8 +37,15 @@ _trainloaders, _validationloaders, testloader = prepare_dataset(
 channels = 1 if args.dataset == 1 else 3
 print("channels: ", channels)
 # Define strategy
+<<<<<<< Updated upstream
 strategy = NormalFedAvg(
     fraction_fit=0.1,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+=======
+# strategy = fl.server.strategy.FedAvg(evaluate_metrics_aggregation_fn=weighted_average)
+# strategy = CustomStrategy2(evaluate_metrics_aggregation_fn=weighted_average)
+strategy = CustomStrategy2(
+    fraction_fit=0.2,  # in simulation, since all clients are available at all times, we can just use `min_fit_clients` to control exactly how many clients we want to involve during fit
+>>>>>>> Stashed changes
     min_fit_clients=3,  # number of clients to sample for fit()
     fraction_evaluate=1.0,  # similar to fraction_fit, we don't need to use this argument.
     min_evaluate_clients=3,  # number of clients to sample for evaluate()

@@ -99,6 +99,10 @@ def get_mnist(data_path: str = "./data"):
     # handwritten digits 0 - 9. 
     trainset = MNIST(data_path, train=True, download=True, transform=tr)
     testset = MNIST(data_path, train=False, download=True, transform=tr)
+
+
+    print("client data!!!!!") 
+    print(trainset[0])
     return trainset, testset
 
 
@@ -145,7 +149,6 @@ def prepare_data(num_partitions: int, batch_size: int, val_ratio: float = 0.1):
         valloaders.append(
             DataLoader(for_val, batch_size=batch_size, shuffle=False)
         )
-
     cid = random.randint(0, num_partitions - 1)
     return trainloaders[cid], valloaders[cid]
 
@@ -167,7 +170,6 @@ class FlowerClient(fl.client.NumPyClient):
         params_dict = zip(net.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         net.load_state_dict(state_dict, strict=True)
-
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)

@@ -54,6 +54,10 @@ class PrimesServicer(rpc.PrimesServicer):
                 self.server_clients[cid].append((loss, accuracy))
             else:
                 self.server_clients[cid] = [(loss, accuracy)]
+
+            # print without printing \n
+
+            print(cid, loss, accuracy, end=" ")
         
         return primes.ServerReply(status="OK")
     
