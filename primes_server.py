@@ -93,7 +93,7 @@ class PrimesServicer(rpc.PrimesServicer):
     
     
     def getNextClippingClients(self, request: primes.nextClippingClientsRequest, context):
-        PREV_ROUNDS = 2
+        PREV_ROUNDS = 3
         k = request.k
         client_cids = request.cids
 
@@ -113,8 +113,10 @@ class PrimesServicer(rpc.PrimesServicer):
                 for round in self.history[-PREV_ROUNDS:]: 
                     if cid in round:
                         present_count +=1
-                if present_count == PREV_ROUNDS:
+                if present_count >= PREV_ROUNDS:
                     self.banned.add(cid)
+                # elif cid in self.banned:
+                #     self.banned.remove(cid)
 
         return primes.nextPrimesClientsReply(cids=selected_cids)
 
