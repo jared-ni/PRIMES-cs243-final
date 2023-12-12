@@ -10,8 +10,10 @@ Then, configure the number of clients in pytorch_quickstart/run.sh. Note that th
 
 After doing these, run: 
 
-```
-python primes_server.py
-./pytorch_quickstart/run.sh
-```
-to see federated learning experiment begins. 
+`python primes_server.py`
+
+Then in another terminal, run: 
+
+`./pytorch_quickstart/run.sh`
+
+to see the federated learning experiment begin. 
