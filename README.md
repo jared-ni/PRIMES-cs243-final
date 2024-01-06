@@ -1,3 +1,5 @@
+# Price Incentive Model Efficiency System
+
 ### Installing Dependencies
 
 Project dependencies (such as `torch` and `flwr`) are defined in `./PRIMES_FLrequirements.txt`. To install those dependencies and manage your virtual environment, use [pip](https://pip.pypa.io/en/latest/development/), but feel free to use a different way of installing dependencies and managing virtual environments if you have other preferences.
